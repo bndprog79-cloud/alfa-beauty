@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FAF6F1">
-<title>Alfa Beauty-Lab — тест</title>
+<title>Alfa Beauty-Lab</title>
 <style>
   :root {
     --bg: #FAF6F1;
@@ -12,10 +12,14 @@
     --surface-2: #F3EAE2;
     --text: #3A2A24;
     --text-2: #7A6A62;
+    --accent: #C98B8B;
     --accent-strong: #9A5B60;
     --on-accent: #FFFFFF;
+    --gold: #C8A97E;
     --line: rgba(58,42,36,.10);
+    --ill-fill: rgba(201,139,139,.18);
     --radius: 20px;
+    --radius-sm: 12px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -23,177 +27,1058 @@
     background: var(--bg);
     color: var(--text);
     font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+    -webkit-text-size-adjust: 100%;
   }
-  .wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 32px; }
-  h1 { font-size: 28px; margin: 8px 0 4px; }
-  .sub { color: var(--text-2); font-size: 14px; margin: 0 0 20px; }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 16px;
+  a { color: inherit; }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent-strong); outline-offset: 2px; }
+  #app { max-width: 480px; margin: 0 auto; padding: 16px 16px 0; min-height: 100vh; display: flex; flex-direction: column; }
+  h1, h2, p { margin: 0; }
+
+  .ill { background: var(--surface-2); border-radius: var(--radius-sm); overflow: hidden; }
+  .ill svg { display: block; width: 100%; height: 100%; }
+  .ill-tile { aspect-ratio: 200 / 140; border-radius: 0; }
+  .ill-big { aspect-ratio: 200 / 140; margin-bottom: 16px; }
+  .ill-mini { width: 48px; height: 48px; flex: none; }
+
+  /* Главная */
+  .hero { text-align: center; padding: 8px 0 16px; }
+  .hero h1 { font-size: 30px; line-height: 1.2; }
+  .hero .sub { color: var(--text-2); margin-top: 2px; }
+  .hero .addr { color: var(--text-2); font-size: 13px; margin-top: 8px; }
+  .lang { display: inline-flex; margin-top: 12px; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .lang button {
+    min-width: 52px; min-height: 44px; border: 0; background: transparent; color: var(--text-2);
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
   }
-  .card h2 { font-size: 18px; margin: 0 0 12px; }
-  .btn {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 52px; padding: 12px 16px; margin-bottom: 10px;
-    border-radius: 16px; border: 0;
-    background: var(--accent-strong); color: var(--on-accent);
-    font: inherit; font-weight: 600; text-decoration: none; text-align: center;
-    cursor: pointer; width: 100%;
+  .lang button[aria-pressed="true"] { background: var(--accent-strong); color: var(--on-accent); }
+  .actions { display: flex; justify-content: center; gap: 24px; padding: 8px 0 20px; }
+  .action { display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; font-size: 13px; color: var(--text-2); min-width: 64px; }
+  .action .circle {
+    width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: var(--surface); border: 1px solid var(--line); color: var(--accent-strong);
   }
-  .btn.alt { background: var(--surface-2); color: var(--accent-strong); }
-  .btn:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
-  .note { font-size: 13px; color: var(--text-2); margin: 0 0 10px; }
-  .screen-name { font-size: 22px; font-weight: 700; margin: 0 0 6px; }
-  .diag { font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace; color: var(--text-2); word-break: break-all; }
+  .ico { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .section-title { font-size: 20px; margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .cat-card {
+    display: flex; flex-direction: column; text-decoration: none; background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+  }
+  .cat-card .body { padding: 10px 12px 12px; }
+  .cat-card .name { font-weight: 600; line-height: 1.25; }
+  .cat-card .count { color: var(--text-2); font-size: 13px; margin-top: 4px; }
+  .footer { margin-top: auto; padding: 24px 0 calc(24px + env(safe-area-inset-bottom)); text-align: center; color: var(--text-2); font-size: 13px; }
+  .footer-inner { border-top: 1px solid var(--gold); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .footer a { color: var(--accent-strong); display: inline-block; min-height: 44px; line-height: 44px; }
+
+  /* Категория и услуга */
+  .back {
+    display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding-right: 12px;
+    text-decoration: none; color: var(--accent-strong); font-weight: 600; align-self: flex-start;
+  }
+  .screen-head { margin: 8px 0 16px; }
+  .screen-head h1 { font-size: 26px; line-height: 1.2; }
+  .screen-head .from { color: var(--text-2); margin-top: 4px; }
+  .list { list-style: none; margin: 0 0 24px; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .list li + li { border-top: 1px solid var(--line); }
+  .row { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 12px; text-decoration: none; }
+  .row .info { flex: 1; min-width: 0; }
+  .row .name { line-height: 1.3; }
+  .row .meta { color: var(--text-2); font-size: 13px; margin-top: 2px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .row .price { font-weight: 600; text-align: right; white-space: nowrap; font-size: 15px; }
+  .row .chev { color: var(--text-2); font-size: 20px; }
+  .hit { display: inline-block; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--accent-strong); font-size: 12px; font-weight: 600; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .card h1 { font-size: 26px; line-height: 1.2; }
+  .card .price-big { font-size: 30px; font-weight: 700; margin-top: 8px; }
+  .card .meta { color: var(--text-2); margin-top: 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .card .desc { margin-top: 16px; }
+  .card h2 { font-size: 18px; margin: 20px 0 8px; }
+  .checks { list-style: none; margin: 0; padding: 0; }
+  .checks li { position: relative; padding: 4px 0 4px 28px; }
+  .checks li::before {
+    content: ""; position: absolute; left: 4px; top: 10px; width: 12px; height: 6px;
+    border-left: 2px solid var(--accent-strong); border-bottom: 2px solid var(--accent-strong); transform: rotate(-45deg);
+  }
+  .book-bar { position: sticky; bottom: 0; margin-top: auto; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); background: var(--bg); }
+  .btn-book {
+    display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; border-radius: 16px;
+    background: var(--accent-strong); color: var(--on-accent); text-decoration: none; font-weight: 600; text-align: center; padding: 8px 16px;
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1 id="title"></h1>
-  <p class="sub" id="subtitle"></p>
-
-  <section class="card">
-    <h2 id="contactsTitle"></h2>
-    <a class="btn" id="waSalon" target="_blank" rel="noopener"></a>
-    <a class="btn alt" id="waTest" target="_blank" rel="noopener"></a>
-    <p class="note" id="waNote"></p>
-    <a class="btn alt" id="call"></a>
-  </section>
-
-  <section class="card">
-    <h2 id="navTitle"></h2>
-    <p class="screen-name" id="screenName"></p>
-    <p class="note" id="screenHint"></p>
-    <div id="navButtons"></div>
-  </section>
-
-  <section class="card">
-    <h2 id="diagTitle"></h2>
-    <div class="diag" id="diag"></div>
-  </section>
-</div>
+<main id="app"></main>
 
 <script>
 'use strict';
 
-// Временные данные тестовой страницы (этап 1). На этапе 2 заменяются priceData из docs/data.js.
-var testData = {
-  company: {
-    name: 'Alfa Beauty-Lab',
-    phone: '77010000000',
-    whatsappNumber: '77010000000'
+// Данные прайса — копия docs/data.js без изменений.
+const priceData = {
+  meta: {
+    version: "1.0.0",
+    updatedAt: "2026-10-01",      // дата «Цены актуальны на»
+    theme: "nude",                // nude | noir | sage
+    defaultLang: "ru",            // ru | kk
+    siteUrl: "https://bndprog79-cloud.github.io/alfa-beauty/"
   },
+
+  company: {
+    name: "Alfa Beauty-Lab",
+    subtitle: { ru: "Салон красоты", kk: "Сұлулық салоны" },
+    address: { ru: "г. Алматы, ул. Абая, 150", kk: "Алматы қ., Абай к-сі, 150" },
+    phone: "77010000000",          // для tel: (без плюса, код страны 7)
+    phoneDisplay: "+7 701 000 00 00",
+    whatsappNumber: "77010000000", // для wa.me (без плюса)
+    instagram: "https://instagram.com/alfa.beauty.lab",
+    mapLink: "https://2gis.kz/almaty/search/%D0%90%D0%B1%D0%B0%D1%8F%20150",
+    hours: {
+      // 1 = понедельник … 7 = воскресенье
+      days: [1, 2, 3, 4, 5, 6, 7],
+      open: "10:00",
+      close: "20:00"
+    }
+  },
+
   ui: {
-    subtitle: 'Тестовая страница (этап 1): проверка открытия на телефонах',
-    contactsTitle: 'Связь',
-    waSalon: 'WhatsApp: написать салону',
-    waTest: 'WhatsApp: проверка текста',
-    waNote: 'Первая кнопка — на номер салона (сейчас номер тестовый). Вторая — без номера: WhatsApp предложит выбрать чат, проверьте, что текст пришёл без искажений.',
-    waText: 'Здравствуйте! Хочу записаться на услугу: «Покрытие гель-лаком / руки» (от 20 000 ₸). Сәлеметсіз бе! Қызмет: «Шаш қию» — әғқңөұүһі ӘҒҚҢӨҰҮҺІ.',
-    call: 'Позвонить',
-    navTitle: 'Навигация и кнопка «Назад»',
-    diagTitle: 'Диагностика',
-    screens: {
-      home: { name: 'Экран 1: Главная', hint: 'Нажмите кнопку ниже, затем вернитесь системной кнопкой «Назад» или свайпом.', next: 'Открыть категорию ›' },
-      cat: { name: 'Экран 2: Категория', hint: '«Назад» должен вернуть на главную, а не закрыть страницу.', next: 'Открыть услугу ›' },
-      item: { name: 'Экран 3: Услуга', hint: '«Назад» должен вернуть на категорию.', next: '' }
+    ru: {
+      langLabel: "RU",
+      categories: "Категории",
+      back: "Назад",
+      searchPlaceholder: "Найти услугу",
+      searchClear: "Очистить",
+      nothingFound: "Ничего не найдено",
+      openUntil: "Открыто до {time}",
+      closedOpensAt: "Закрыто · откроется в {time}",
+      actionWhatsapp: "WhatsApp",
+      actionCall: "Позвонить",
+      actionRoute: "Маршрут",
+      book: "Записаться через WhatsApp",
+      includes: "Что входит",
+      hit: "Хит",
+      priceFrom: "от {price}",
+      perPrefix: " / ",
+      durationApprox: "≈",
+      minutes: "мин",
+      hours: "ч",
+      servicesOne: "услуга",
+      servicesFew: "услуги",
+      servicesMany: "услуг",
+      updatedAt: "Цены актуальны на {date}",
+      disclaimer: "Цены указаны в тенге. Итоговая стоимость может зависеть от длины волос и сложности работы.",
+      instagram: "Мы в Instagram",
+      openInBrowser: "Открыть прайс в браузере",
+      noscriptText: "Для просмотра прайса откройте его в браузере или позвоните нам.",
+      waGreeting: "Здравствуйте! Хочу записаться в салон.",
+      waTemplate: "Здравствуйте! Хочу записаться на услугу: {name} ({price})."
     },
-    titleSuffix: ' — тест'
-  }
+    kk: {
+      langLabel: "KZ",
+      categories: "Санаттар",
+      back: "Артқа",
+      searchPlaceholder: "Қызметті іздеу",
+      searchClear: "Тазалау",
+      nothingFound: "Ештеңе табылмады",
+      openUntil: "{time} дейін ашық",
+      closedOpensAt: "Жабық · ашылуы {time}",
+      actionWhatsapp: "WhatsApp",
+      actionCall: "Қоңырау",
+      actionRoute: "Бағыт",
+      book: "WhatsApp арқылы жазылу",
+      includes: "Қызметке не кіреді",
+      hit: "Хит",
+      priceFrom: "{price} бастап",
+      perPrefix: " / ",
+      durationApprox: "≈",
+      minutes: "мин",
+      hours: "сағ",
+      servicesOne: "қызмет",
+      servicesFew: "қызмет",
+      servicesMany: "қызмет",
+      updatedAt: "Бағалар {date} күнгі жағдай бойынша",
+      disclaimer: "Бағалар теңгемен көрсетілген. Қорытынды құны шаштың ұзындығы мен жұмыстың күрделілігіне байланысты болуы мүмкін.",
+      instagram: "Біз Instagram-да",
+      openInBrowser: "Прайсты браузерде ашу",
+      noscriptText: "Прайсты көру үшін оны браузерде ашыңыз немесе бізге қоңырау шалыңыз.",
+      waGreeting: "Сәлеметсіз бе! Салонға жазылғым келеді.",
+      waTemplate: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name} ({price})."
+    }
+  },
+
+  categories: [
+    // ───────────── СТРИЖКА И УКЛАДКА ─────────────
+    {
+      id: "hair",
+      illustration: "hair-base",
+      name: { ru: "Стрижка и укладка", kk: "Шаш қию және сәндеу" },
+      items: [
+        {
+          id: "men-cut",
+          illustration: "hair-men",
+          name: { ru: "Мужская стрижка", kk: "Ерлер шаш қиюы" },
+          price: { amount: 3500 },
+          duration: 40,
+          desc: {
+            ru: "Классическая или модельная мужская стрижка машинкой и ножницами с учётом формы головы и роста волос.",
+            kk: "Бас пішіні мен шаштың өсу бағытын ескере отырып, машинка мен қайшымен жасалатын классикалық немесе модельдік ерлер шаш қиюы."
+          },
+          includes: {
+            ru: ["Консультация мастера", "Мытьё головы", "Стрижка и укладка"],
+            kk: ["Шебердің кеңесі", "Бас жуу", "Шаш қию және сәндеу"]
+          }
+        },
+        {
+          id: "women-cut",
+          illustration: "hair-women",
+          name: { ru: "Женская стрижка", kk: "Әйелдер шаш қиюы" },
+          price: { amount: 4000 },
+          duration: 60,
+          hit: true,
+          desc: {
+            ru: "Стрижка любой сложности — от освежения кончиков до смены образа. Мастер подберёт форму по типу лица и структуре волос.",
+            kk: "Кез келген күрделіліктегі шаш қию — ұштарын жаңартудан бастап бейнені толық өзгертуге дейін. Шебер бет пішіні мен шаш құрылымына сай форма таңдайды."
+          },
+          includes: {
+            ru: ["Консультация мастера", "Мытьё головы", "Стрижка", "Сушка феном"],
+            kk: ["Шебердің кеңесі", "Бас жуу", "Шаш қию", "Фенмен кептіру"]
+          }
+        },
+        {
+          id: "styling",
+          illustration: "hair-styling",
+          name: { ru: "Укладка волос", kk: "Шаш сәндеу" },
+          price: { amount: 4000 },
+          duration: 45,
+          desc: {
+            ru: "Объёмная укладка феном, локоны или гладкие волосы — для повседневного образа, фотосессии или события.",
+            kk: "Фенмен көлемді сәндеу, бұйра немесе тегіс шаш — күнделікті бейнеге, фотосессияға немесе мерекеге."
+          },
+          includes: {
+            ru: ["Мытьё головы", "Термозащита", "Укладка феном, утюжком или плойкой", "Фиксация лаком"],
+            kk: ["Бас жуу", "Термоқорғаныс", "Фен, үтік немесе бұйралағышпен сәндеу", "Лакпен бекіту"]
+          }
+        },
+        {
+          id: "prom",
+          illustration: "hair-prom",
+          name: { ru: "Причёска на выпускной", kk: "Бітіру кешіне шаш үлгісі" },
+          price: { amount: 7000 },
+          duration: 90,
+          hit: true,
+          desc: {
+            ru: "Вечерняя причёска для выпускного: собранные волосы, локоны или плетение. Держится весь вечер.",
+            kk: "Бітіру кешіне арналған кешкі шаш үлгісі: жиналған шаш, бұйралар немесе өрім. Кеш бойы сақталады."
+          },
+          includes: {
+            ru: ["Подбор образа", "Укладка и фиксация", "Декор: шпильки, заколки"],
+            kk: ["Бейнені таңдау", "Сәндеу және бекіту", "Әшекей: түйреуіштер, қыстырғыштар"]
+          }
+        },
+        {
+          id: "afro",
+          illustration: "hair-afro",
+          name: { ru: "Афрокудри", kk: "Афробұйралар" },
+          price: { amount: 10000, from: true },
+          duration: 180,
+          desc: {
+            ru: "Мелкие спиральные кудри на всю длину волос. При правильном уходе эффект сохраняется несколько недель.",
+            kk: "Шаштың бүкіл ұзындығына ұсақ спираль бұйралар. Дұрыс күтім жасаса, әсері бірнеше аптаға дейін сақталады."
+          },
+          includes: {
+            ru: ["Мытьё и подготовка волос", "Накрутка и состав", "Рекомендации по уходу"],
+            kk: ["Шашты жуу және дайындау", "Бұйралау және құрам", "Күтім бойынша кеңестер"]
+          }
+        }
+      ]
+    },
+
+    // ───────────── ОКРАШИВАНИЕ ─────────────
+    {
+      id: "color",
+      illustration: "color-base",
+      name: { ru: "Окрашивание волос", kk: "Шаш бояу" },
+      items: [
+        {
+          id: "ombre",
+          illustration: "color-ombre",
+          name: { ru: "Окрашивание омбре", kk: "Омбре бояуы" },
+          price: { amount: 20000, from: true },
+          duration: 180,
+          hit: true,
+          desc: {
+            ru: "Плавный переход от тёмных корней к светлым кончикам. Выглядит естественно и не требует частой коррекции.",
+            kk: "Қара түбірден ашық ұштарға біркелкі ауысу. Табиғи көрінеді және жиі түзетуді қажет етпейді."
+          },
+          includes: {
+            ru: ["Консультация и подбор оттенка", "Осветление и тонирование", "Уход после окрашивания", "Укладка"],
+            kk: ["Кеңес және реңк таңдау", "Ағарту және тондау", "Бояудан кейінгі күтім", "Сәндеу"]
+          }
+        },
+        {
+          id: "degrade",
+          illustration: "color-degrade",
+          name: { ru: "Окрашивание деграде", kk: "Деграде бояуы" },
+          price: { amount: 20000, from: true },
+          duration: 180,
+          desc: {
+            ru: "Многоступенчатый переход между двумя или несколькими оттенками — от натуральных до ярких.",
+            kk: "Екі немесе бірнеше реңк арасындағы көп сатылы ауысу — табиғидан жарқын түстерге дейін."
+          },
+          includes: {
+            ru: ["Консультация и подбор оттенков", "Осветление и тонирование", "Уход после окрашивания", "Укладка"],
+            kk: ["Кеңес және реңктерді таңдау", "Ағарту және тондау", "Бояудан кейінгі күтім", "Сәндеу"]
+          }
+        },
+        {
+          id: "balayage",
+          illustration: "color-balayage",
+          name: { ru: "Окрашивание балаяж", kk: "Балаяж бояуы" },
+          price: { amount: 20000, from: true },
+          duration: 210,
+          desc: {
+            ru: "Мягкие светлые пряди, нанесённые вручную, — эффект волос, выгоревших на солнце. Добавляет объём и сияние.",
+            kk: "Қолмен салынған жұмсақ ашық талшықтар — шаш күнге күйгендей әсер береді. Көлем мен жылтыр қосады."
+          },
+          includes: {
+            ru: ["Консультация и подбор оттенка", "Осветление и тонирование", "Уход после окрашивания", "Укладка"],
+            kk: ["Кеңес және реңк таңдау", "Ағарту және тондау", "Бояудан кейінгі күтім", "Сәндеу"]
+          }
+        },
+        {
+          id: "solid",
+          illustration: "color-solid",
+          name: { ru: "Окрашивание в один тон", kk: "Бір түске бояу" },
+          price: { amount: 10000, from: true },
+          duration: 120,
+          desc: {
+            ru: "Равномерный цвет по всей длине: освежить свой оттенок, закрасить седину или сменить цвет.",
+            kk: "Бүкіл ұзындық бойынша біркелкі түс: өз реңкін жаңарту, ақ шашты бояу немесе түсті өзгерту."
+          },
+          includes: {
+            ru: ["Подбор оттенка", "Окрашивание по всей длине", "Шампунь и бальзам", "Сушка феном"],
+            kk: ["Реңк таңдау", "Бүкіл ұзындықты бояу", "Сусабын және бальзам", "Фенмен кептіру"]
+          }
+        },
+        {
+          id: "roots",
+          illustration: "color-roots",
+          name: { ru: "Прикорневое окрашивание", kk: "Түбірді бояу" },
+          price: { amount: 7000 },
+          duration: 90,
+          desc: {
+            ru: "Окрашивание отросших корней (до 3–4 см) в тон основного цвета.",
+            kk: "Өскен түбірді (3–4 см-ге дейін) негізгі түске сәйкес бояу."
+          },
+          includes: {
+            ru: ["Подбор оттенка в тон", "Окрашивание корней", "Сушка феном"],
+            kk: ["Түске сай реңк таңдау", "Түбірді бояу", "Фенмен кептіру"]
+          }
+        }
+      ]
+    },
+
+    // ───────────── НОГТИ РУК ─────────────
+    {
+      id: "nails",
+      illustration: "nails-base",
+      name: { ru: "Уход за ногтями рук", kk: "Қол тырнағына күтім" },
+      items: [
+        {
+          id: "manicure-gel",
+          illustration: "nails-gel",
+          name: { ru: "Маникюр с покрытием гель-лаком", kk: "Гель-лак жабынымен маникюр" },
+          price: { amount: 4000 },
+          duration: 90,
+          hit: true,
+          desc: {
+            ru: "Аппаратный или комбинированный маникюр и стойкое покрытие гель-лаком, которое держится 2–3 недели.",
+            kk: "Аппараттық немесе аралас маникюр және 2–3 аптаға дейін сақталатын төзімді гель-лак жабыны."
+          },
+          includes: {
+            ru: ["Снятие старого покрытия", "Обработка кутикулы и формы ногтей", "Покрытие гель-лаком в один тон"],
+            kk: ["Ескі жабынды алу", "Кутикула мен тырнақ пішінін өңдеу", "Бір түсті гель-лак жабыны"]
+          }
+        },
+        {
+          id: "manicure-classic",
+          illustration: "nails-classic",
+          name: { ru: "Классический (обрезной) маникюр", kk: "Классикалық (кесілетін) маникюр" },
+          price: { amount: 2500 },
+          duration: 45,
+          desc: {
+            ru: "Традиционный маникюр с распариванием и аккуратным удалением кутикулы. Без покрытия.",
+            kk: "Буландырып, кутикуланы ұқыпты алып тастайтын дәстүрлі маникюр. Жабынсыз."
+          },
+          includes: {
+            ru: ["Ванночка для рук", "Обработка кутикулы", "Придание формы ногтям"],
+            kk: ["Қолға арналған ванна", "Кутикуланы өңдеу", "Тырнаққа пішін беру"]
+          }
+        },
+        {
+          id: "hands-coat",
+          illustration: "nails-coat",
+          name: { ru: "Покрытие гель-лаком / руки", kk: "Гель-лак жабыны / қол" },
+          price: { amount: 1500 },
+          duration: 40,
+          desc: {
+            ru: "Покрытие гель-лаком без маникюра — если ногти уже в порядке и нужен только цвет.",
+            kk: "Маникюрсіз гель-лак жабыны — тырнақ дайын болса және тек түс қажет болса."
+          },
+          includes: {
+            ru: ["Подготовка ногтевой пластины", "База, цвет и топ", "Сушка в лампе"],
+            kk: ["Тырнақ бетін дайындау", "База, түс және топ", "Шамда кептіру"]
+          }
+        },
+        {
+          id: "nail-design",
+          illustration: "nails-design",
+          name: { ru: "Дизайн ногтей", kk: "Тырнақ дизайны" },
+          price: { amount: 500, from: true, per: { ru: "ноготь", kk: "тырнақ" } },
+          duration: 30,
+          desc: {
+            ru: "Рисунки, френч, втирка, стразы и наклейки — от акцента на одном ногте до полного дизайна.",
+            kk: "Сурет, френч, жылтыр ұнтақ, стразалар мен жапсырмалар — бір тырнақтағы акценттен толық дизайнға дейін."
+          },
+          includes: {
+            ru: ["Подбор дизайна по фото или идее", "Роспись, стразы или наклейки"],
+            kk: ["Фото немесе идея бойынша дизайн таңдау", "Сурет салу, стразалар немесе жапсырмалар"]
+          }
+        },
+        {
+          id: "nail-extension",
+          illustration: "nails-extension",
+          name: { ru: "Наращивание ногтей", kk: "Тырнақ ұзарту" },
+          price: { amount: 10000, from: true },
+          duration: 150,
+          desc: {
+            ru: "Наращивание гелем на формы или типсы. Длина и форма на ваш выбор: миндаль, квадрат, балерина.",
+            kk: "Формаға немесе типсаға гельмен ұзарту. Ұзындығы мен пішіні өз таңдауыңызша: бадам, шаршы, балерина."
+          },
+          includes: {
+            ru: ["Маникюр", "Моделирование длины и формы", "Покрытие гель-лаком"],
+            kk: ["Маникюр", "Ұзындық пен пішінді үлгілеу", "Гель-лак жабыны"]
+          }
+        }
+      ]
+    },
+
+    // ───────────── НОГИ ─────────────
+    {
+      id: "feet",
+      illustration: "feet-base",
+      name: { ru: "Уход за ногами", kk: "Аяққа күтім" },
+      items: [
+        {
+          id: "pedicure-classic",
+          illustration: "feet-classic",
+          name: { ru: "Педикюр классический", kk: "Классикалық педикюр" },
+          price: { amount: 6000 },
+          duration: 60,
+          desc: {
+            ru: "Обработка стоп и ногтей: удаление огрубевшей кожи и кутикулы, придание формы ногтям. Без покрытия.",
+            kk: "Табан мен тырнақты өңдеу: дөрекі тері мен кутикуланы алу, тырнаққа пішін беру. Жабынсыз."
+          },
+          includes: {
+            ru: ["Ванночка для ног", "Обработка стоп", "Обработка ногтей и кутикулы"],
+            kk: ["Аяққа арналған ванна", "Табанды өңдеу", "Тырнақ пен кутикуланы өңдеу"]
+          }
+        },
+        {
+          id: "pedicure-gel",
+          illustration: "feet-gel",
+          name: { ru: "Педикюр с покрытием гель-лаком", kk: "Гель-лак жабынымен педикюр" },
+          price: { amount: 8500 },
+          duration: 90,
+          hit: true,
+          desc: {
+            ru: "Полный педикюр и стойкое покрытие гель-лаком, которое держится до 4 недель.",
+            kk: "Толық педикюр және 4 аптаға дейін сақталатын төзімді гель-лак жабыны."
+          },
+          includes: {
+            ru: ["Обработка стоп и ногтей", "Покрытие гель-лаком", "Увлажняющий крем"],
+            kk: ["Табан мен тырнақты өңдеу", "Гель-лак жабыны", "Ылғалдандыратын крем"]
+          }
+        },
+        {
+          id: "feet-coat",
+          illustration: "feet-coat",
+          name: { ru: "Покрытие гель-лаком / ноги", kk: "Гель-лак жабыны / аяқ" },
+          price: { amount: 2500 },
+          duration: 40,
+          desc: {
+            ru: "Покрытие гель-лаком ногтей на ногах без педикюра.",
+            kk: "Педикюрсіз аяқ тырнағына гель-лак жабыны."
+          },
+          includes: {
+            ru: ["Подготовка ногтей", "База, цвет и топ", "Сушка в лампе"],
+            kk: ["Тырнақты дайындау", "База, түс және топ", "Шамда кептіру"]
+          }
+        }
+      ]
+    },
+
+    // ───────────── БРОВИ И РЕСНИЦЫ ─────────────
+    {
+      id: "lashes",
+      illustration: "lashes-base",
+      name: { ru: "Брови и ресницы", kk: "Қас пен кірпік" },
+      items: [
+        {
+          id: "lash-classic",
+          illustration: "lash-classic",
+          name: { ru: "Классическое наращивание ресниц", kk: "Кірпікті классикалық ұзарту" },
+          price: { amount: 7000 },
+          duration: 120,
+          desc: {
+            ru: "Одна искусственная ресница на каждую натуральную. Естественный эффект, будто это ваши ресницы.",
+            kk: "Әр табиғи кірпікке бір жасанды кірпік. Өз кірпігіңіздей табиғи әсер."
+          },
+          includes: {
+            ru: ["Подбор изгиба и длины", "Наращивание", "Рекомендации по уходу"],
+            kk: ["Иін мен ұзындықты таңдау", "Ұзарту", "Күтім бойынша кеңестер"]
+          }
+        },
+        {
+          id: "lash-2d",
+          illustration: "lash-2d",
+          name: { ru: "2D наращивание", kk: "2D кірпік ұзарту" },
+          price: { amount: 8500 },
+          duration: 150,
+          desc: {
+            ru: "Пучок из двух тонких ресниц на одну натуральную: заметнее классики, но всё ещё естественно.",
+            kk: "Бір табиғи кірпікке екі жұқа кірпіктен шоқ: классикадан айқынырақ, бірақ табиғи."
+          },
+          includes: {
+            ru: ["Подбор изгиба и длины", "Наращивание", "Рекомендации по уходу"],
+            kk: ["Иін мен ұзындықты таңдау", "Ұзарту", "Күтім бойынша кеңестер"]
+          }
+        },
+        {
+          id: "lash-3d",
+          illustration: "lash-3d",
+          name: { ru: "3D наращивание", kk: "3D кірпік ұзарту" },
+          price: { amount: 9500 },
+          duration: 150,
+          hit: true,
+          desc: {
+            ru: "Три ресницы в пучке: выразительный объём и густота даже без макияжа.",
+            kk: "Шоқта үш кірпік: макияжсыз-ақ әсерлі көлем мен қалыңдық."
+          },
+          includes: {
+            ru: ["Подбор изгиба и длины", "Наращивание", "Рекомендации по уходу"],
+            kk: ["Иін мен ұзындықты таңдау", "Ұзарту", "Күтім бойынша кеңестер"]
+          }
+        },
+        {
+          id: "lash-mega",
+          illustration: "lash-mega",
+          name: { ru: "Мегаобъём (4D, 5D)", kk: "Мегакөлем (4D, 5D)" },
+          price: { amount: 10500 },
+          duration: 180,
+          desc: {
+            ru: "4–5 ультратонких ресниц в пучке для насыщенного бархатного взгляда.",
+            kk: "Қанық, барқыт көзқарас үшін шоқта 4–5 өте жұқа кірпік."
+          },
+          includes: {
+            ru: ["Подбор изгиба и длины", "Наращивание", "Рекомендации по уходу"],
+            kk: ["Иін мен ұзындықты таңдау", "Ұзарту", "Күтім бойынша кеңестер"]
+          }
+        },
+        {
+          id: "lash-hollywood",
+          illustration: "lash-hollywood",
+          name: { ru: "Наращивание «Голливуд» (6D, 8D)", kk: "«Голливуд» кірпік ұзарту (6D, 8D)" },
+          price: { amount: 11000 },
+          duration: 180,
+          desc: {
+            ru: "Максимальный объём: 6–8 ресниц в пучке. Пушистые ресницы, как у звёзд красной дорожки.",
+            kk: "Ең үлкен көлем: шоқта 6–8 кірпік. Жұлдыздардағыдай үлпілдек кірпік."
+          },
+          includes: {
+            ru: ["Подбор изгиба и длины", "Наращивание", "Рекомендации по уходу"],
+            kk: ["Иін мен ұзындықты таңдау", "Ұзарту", "Күтім бойынша кеңестер"]
+          }
+        },
+        {
+          id: "lash-lami",
+          illustration: "lash-lami",
+          name: { ru: "Ламинирование ресниц", kk: "Кірпікті ламинациялау" },
+          price: { amount: 7000 },
+          duration: 60,
+          desc: {
+            ru: "Подкручивание, питание и окрашивание натуральных ресниц. Эффект держится 6–8 недель.",
+            kk: "Табиғи кірпікті иіп, қоректендіру және бояу. Әсері 6–8 аптаға сақталады."
+          },
+          includes: {
+            ru: ["Подкручивание составом", "Окрашивание", "Питательная сыворотка"],
+            kk: ["Құраммен иу", "Бояу", "Қоректендіргіш сарысу"]
+          }
+        },
+        {
+          id: "brow-shape",
+          illustration: "brow-shape",
+          name: { ru: "Коррекция бровей", kk: "Қасты түзету" },
+          price: { amount: 2000 },
+          duration: 30,
+          desc: {
+            ru: "Аккуратная форма бровей пинцетом или воском с учётом черт лица.",
+            kk: "Бет әлпетін ескере отырып, қасқа пинцет немесе балауызбен ұқыпты пішін беру."
+          },
+          includes: {
+            ru: ["Подбор формы", "Коррекция пинцетом или воском"],
+            kk: ["Пішін таңдау", "Пинцет немесе балауызбен түзету"]
+          }
+        },
+        {
+          id: "brow-tint",
+          illustration: "brow-tint",
+          name: { ru: "Окрашивание бровей", kk: "Қасты бояу" },
+          price: { amount: 2500 },
+          duration: 30,
+          desc: {
+            ru: "Окрашивание краской или хной: брови выглядят ярче и гуще, форма становится чётче.",
+            kk: "Бояумен немесе хнамен бояу: қас жарқын әрі қалың көрінеді, пішіні айқындалады."
+          },
+          includes: {
+            ru: ["Подбор оттенка", "Окрашивание краской или хной"],
+            kk: ["Реңк таңдау", "Бояумен немесе хнамен бояу"]
+          }
+        },
+        {
+          id: "brow-lami",
+          illustration: "brow-lami",
+          name: { ru: "Ламинирование бровей", kk: "Қасты ламинациялау" },
+          price: { amount: 6000 },
+          duration: 60,
+          desc: {
+            ru: "Долговременная укладка бровей: волоски лежат ровно и выглядят гуще. Эффект до 6 недель.",
+            kk: "Қасты ұзақ мерзімді сәндеу: қылдар тегіс жатады және қалың көрінеді. Әсері 6 аптаға дейін."
+          },
+          includes: {
+            ru: ["Ламинирующий состав", "Окрашивание", "Коррекция формы"],
+            kk: ["Ламинациялау құрамы", "Бояу", "Пішінді түзету"]
+          }
+        }
+      ]
+    },
+
+    // ───────────── МАКИЯЖ ─────────────
+    {
+      id: "makeup",
+      illustration: "makeup-base",
+      name: { ru: "Макияж", kk: "Макияж" },
+      items: [
+        {
+          id: "makeup-day",
+          illustration: "makeup-day",
+          name: { ru: "Дневной макияж (деловой)", kk: "Күндізгі макияж (іскерлік)" },
+          price: { amount: 6500 },
+          duration: 60,
+          desc: {
+            ru: "Лёгкий естественный макияж для работы, встреч и фото при дневном свете.",
+            kk: "Жұмысқа, кездесулерге және күндізгі фотоға арналған жеңіл табиғи макияж."
+          },
+          includes: {
+            ru: ["Подготовка кожи", "Тон и коррекция", "Макияж глаз, бровей и губ"],
+            kk: ["Теріні дайындау", "Тон және түзету", "Көз, қас және ерін макияжы"]
+          }
+        },
+        {
+          id: "makeup-evening",
+          illustration: "makeup-evening",
+          name: { ru: "Вечерний макияж", kk: "Кешкі макияж" },
+          price: { amount: 7500 },
+          duration: 75,
+          hit: true,
+          desc: {
+            ru: "Выразительный стойкий макияж для праздников и мероприятий с акцентом на глаза или губы.",
+            kk: "Мерекелер мен іс-шараларға арналған, көзге немесе ерінге акцент жасалған әсерлі әрі төзімді макияж."
+          },
+          includes: {
+            ru: ["Подготовка кожи", "Стойкий тон и скульптурирование", "Акцентный макияж глаз или губ", "Накладные ресницы — по желанию"],
+            kk: ["Теріні дайындау", "Төзімді тон және мүсіндеу", "Көзге немесе ерінге акцент", "Жасанды кірпік — қалауыңызша"]
+          }
+        }
+      ]
+    }
+  ]
 };
 
-function $(id) { return document.getElementById(id); }
+// ─────────── Иллюстрации (наполняются на этапах 4–5) ───────────
+// Ключ → SVG-разметка, viewBox 0 0 200 140, цвета только через var(--...).
+const ILLUSTRATIONS = {};
 
-function setText(id, text) { $(id).textContent = text; }
+const ILL_PLACEHOLDER =
+  '<svg viewBox="0 0 200 140" aria-hidden="true" focusable="false">' +
+  '<rect x="40" y="22" width="120" height="96" rx="18" style="fill:var(--ill-fill);stroke:var(--accent-strong);stroke-width:1.6"/>' +
+  '<circle cx="100" cy="70" r="20" style="fill:none;stroke:var(--gold);stroke-width:1.6"/>' +
+  '</svg>';
 
-function waLink(number, text) {
-  return 'https://wa.me/' + (number || '') + '?text=' + encodeURIComponent(text);
+// Простые иконки кнопок (на этапе 3 будут доработаны)
+const ICONS = {
+  whatsapp: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c.5 2 2.5 4 4.5 4.5"/></svg>',
+  call: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
+  route: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>'
+};
+
+// ─────────── Язык ───────────
+const LANG_KEY = 'alfa-beauty-lang';
+const LANGS = Object.keys(priceData.ui);
+let lang = loadLang();
+
+function loadLang() {
+  let saved = null;
+  try { saved = window.localStorage.getItem(LANG_KEY); } catch (e) { saved = null; }
+  if (saved && LANGS.indexOf(saved) !== -1) return saved;
+  return LANGS.indexOf(priceData.meta.defaultLang) !== -1 ? priceData.meta.defaultLang : LANGS[0];
 }
 
-function parseRoute(hash) {
-  var parts = (hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
-  if (parts.length === 0) return { screen: 'home' };
-  if (parts[0] === 'c' && parts.length === 2) return { screen: 'cat', cat: parts[1] };
-  if (parts[0] === 's' && parts.length === 3) return { screen: 'item', cat: parts[1], item: parts[2] };
-  return null;
+function saveLang(value) {
+  try { window.localStorage.setItem(LANG_KEY, value); } catch (e) { /* хранилище недоступно */ }
 }
 
-function nextHash(route) {
-  if (route.screen === 'home') return '#/c/test';
-  if (route.screen === 'cat') return '#/s/test/item';
-  return '';
+function t(key) { return priceData.ui[lang][key]; }
+
+// Текст из объекта {ru, kk} на текущем языке
+function loc(obj) {
+  if (!obj) return '';
+  return obj[lang] != null ? obj[lang] : obj[priceData.meta.defaultLang];
 }
 
-function renderDiag() {
-  var lines = [
-    'protocol: ' + location.protocol,
-    'hash: ' + (location.hash || '(пусто)'),
-    'history.length: ' + history.length,
-    'userAgent: ' + navigator.userAgent
-  ];
-  var box = $('diag');
-  box.textContent = '';
-  lines.forEach(function (line) {
-    var div = document.createElement('div');
-    div.textContent = line;
-    box.appendChild(div);
+function fill(template, vars) {
+  return template.replace(/\{(\w+)\}/g, function (m, key) {
+    return vars[key] != null ? vars[key] : m;
   });
 }
 
-function render() {
-  var route = parseRoute(location.hash);
-  if (!route) {
-    // Неизвестный адрес → главная (без лишней записи в истории)
-    history.replaceState(null, '', '#/');
-    route = { screen: 'home' };
-  }
-  var screen = testData.ui.screens[route.screen];
-  setText('screenName', screen.name);
-  setText('screenHint', screen.hint);
-  document.title = screen.name + ' · ' + testData.company.name + testData.ui.titleSuffix;
+// ─────────── Форматирование ───────────
+const NBSP = ' ';
+const CURRENCY = '₸';
 
-  var nav = $('navButtons');
-  nav.textContent = '';
-  var href = nextHash(route);
-  if (href) {
-    var a = document.createElement('a');
-    a.className = 'btn';
-    a.href = href;
-    a.textContent = screen.next;
-    nav.appendChild(a);
+function formatNumber(n) {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, NBSP);
+}
+
+function formatAmount(n) { return formatNumber(n) + NBSP + CURRENCY; }
+
+function formatPrice(price) {
+  let s = formatAmount(price.amount);
+  if (price.from) s = fill(t('priceFrom'), { price: s });
+  if (price.per) s += t('perPrefix') + loc(price.per);
+  return s;
+}
+
+function formatDuration(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const parts = [];
+  if (h) parts.push(h + NBSP + t('hours'));
+  if (m || !h) parts.push(m + NBSP + t('minutes'));
+  return t('durationApprox') + NBSP + parts.join(' ');
+}
+
+function pluralKey(n) {
+  const d10 = n % 10, d100 = n % 100;
+  if (d10 === 1 && d100 !== 11) return 'servicesOne';
+  if (d10 >= 2 && d10 <= 4 && (d100 < 12 || d100 > 14)) return 'servicesFew';
+  return 'servicesMany';
+}
+
+function formatCount(n) { return n + NBSP + t(pluralKey(n)); }
+
+function minAmount(cat) {
+  return Math.min.apply(null, cat.items.map(function (it) { return it.price.amount; }));
+}
+
+function formatDate(iso) {
+  const p = String(iso).split('-');
+  return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : String(iso);
+}
+
+// ─────────── Ссылки ───────────
+const company = priceData.company;
+
+function waLink(text) {
+  return 'https://wa.me/' + company.whatsappNumber + '?text=' + encodeURIComponent(text);
+}
+
+function telLink() { return 'tel:+' + company.phone; }
+
+function catHash(cat) { return '#/c/' + encodeURIComponent(cat.id); }
+
+function itemHash(cat, item) { return '#/s/' + encodeURIComponent(cat.id) + '/' + encodeURIComponent(item.id); }
+
+// ─────────── Построение DOM ───────────
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+function externalLink(className, href) {
+  const a = el('a', className);
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  return a;
+}
+
+// SVG берётся только из кода (ILLUSTRATIONS / ICONS), не из данных
+function illustration(key, className) {
+  const box = el('div', 'ill ' + className);
+  box.innerHTML = Object.prototype.hasOwnProperty.call(ILLUSTRATIONS, key) ? ILLUSTRATIONS[key] : ILL_PLACEHOLDER;
+  return box;
+}
+
+function icon(name) {
+  const span = el('span', 'circle');
+  span.innerHTML = ICONS[name];
+  return span;
+}
+
+function hitBadge() { return el('span', 'hit', t('hit')); }
+
+function backLink(href, parentKey, text) {
+  const a = el('a', 'back');
+  a.href = href;
+  const arrow = el('span', null, '‹');
+  arrow.setAttribute('aria-hidden', 'true');
+  a.appendChild(arrow);
+  a.appendChild(document.createTextNode(text));
+  a.addEventListener('click', function (e) {
+    // Если предыдущий экран в истории — этот же родитель, просто шаг назад
+    if (routeKeys[currentIdx - 1] === parentKey) {
+      e.preventDefault();
+      history.back();
+    }
+  });
+  return a;
+}
+
+function renderHome(app) {
+  const hero = el('header', 'hero');
+  hero.appendChild(el('h1', null, company.name));
+  hero.appendChild(el('p', 'sub', loc(company.subtitle)));
+  hero.appendChild(el('p', 'addr', loc(company.address)));
+
+  const switcher = el('div', 'lang');
+  LANGS.forEach(function (code) {
+    const b = el('button', null, priceData.ui[code].langLabel);
+    b.type = 'button';
+    b.lang = code;
+    b.setAttribute('aria-pressed', code === lang ? 'true' : 'false');
+    b.addEventListener('click', function () { setLang(code); });
+    switcher.appendChild(b);
+  });
+  hero.appendChild(switcher);
+  app.appendChild(hero);
+
+  const actions = el('nav', 'actions');
+  const wa = externalLink('action', waLink(t('waGreeting')));
+  wa.appendChild(icon('whatsapp'));
+  wa.appendChild(el('span', null, t('actionWhatsapp')));
+  const call = el('a', 'action');
+  call.href = telLink();
+  call.appendChild(icon('call'));
+  call.appendChild(el('span', null, t('actionCall')));
+  const route = externalLink('action', company.mapLink);
+  route.appendChild(icon('route'));
+  route.appendChild(el('span', null, t('actionRoute')));
+  actions.appendChild(wa);
+  actions.appendChild(call);
+  actions.appendChild(route);
+  app.appendChild(actions);
+
+  app.appendChild(el('h2', 'section-title', t('categories')));
+  const grid = el('div', 'grid');
+  priceData.categories.forEach(function (cat) {
+    const card = el('a', 'cat-card');
+    card.href = catHash(cat);
+    card.appendChild(illustration(cat.illustration, 'ill-tile'));
+    const body = el('div', 'body');
+    body.appendChild(el('div', 'name', loc(cat.name)));
+    body.appendChild(el('div', 'count', formatCount(cat.items.length)));
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
+  app.appendChild(grid);
+
+  const footer = el('footer', 'footer');
+  const inner = el('div', 'footer-inner');
+  inner.appendChild(el('p', null, t('disclaimer')));
+  inner.appendChild(el('p', null, fill(t('updatedAt'), { date: formatDate(priceData.meta.updatedAt) })));
+  const insta = externalLink(null, company.instagram);
+  insta.textContent = t('instagram');
+  const instaWrap = el('p');
+  instaWrap.appendChild(insta);
+  inner.appendChild(instaWrap);
+  inner.appendChild(el('p', null, '© ' + new Date().getFullYear() + ' ' + company.name));
+  footer.appendChild(inner);
+  app.appendChild(footer);
+
+  document.title = company.name;
+}
+
+function renderCategory(app, cat) {
+  app.appendChild(backLink('#/', 'home', t('categories')));
+
+  const head = el('header', 'screen-head');
+  head.appendChild(illustration(cat.illustration, 'ill-big'));
+  head.appendChild(el('h1', null, loc(cat.name)));
+  head.appendChild(el('p', 'from', fill(t('priceFrom'), { price: formatAmount(minAmount(cat)) })));
+  app.appendChild(head);
+
+  const list = el('ul', 'list');
+  cat.items.forEach(function (item) {
+    const li = el('li');
+    const row = el('a', 'row');
+    row.href = itemHash(cat, item);
+    row.appendChild(illustration(item.illustration, 'ill-mini'));
+    const info = el('div', 'info');
+    info.appendChild(el('div', 'name', loc(item.name)));
+    if (item.duration || item.hit) {
+      const meta = el('div', 'meta');
+      if (item.duration) meta.appendChild(el('span', null, formatDuration(item.duration)));
+      if (item.hit) meta.appendChild(hitBadge());
+      info.appendChild(meta);
+    }
+    row.appendChild(info);
+    row.appendChild(el('div', 'price', formatPrice(item.price)));
+    const chev = el('span', 'chev', '›');
+    chev.setAttribute('aria-hidden', 'true');
+    row.appendChild(chev);
+    li.appendChild(row);
+    list.appendChild(li);
+  });
+  app.appendChild(list);
+
+  document.title = loc(cat.name) + ' · ' + company.name;
+}
+
+function renderItem(app, cat, item) {
+  app.appendChild(backLink(catHash(cat), 'c/' + cat.id, loc(cat.name)));
+
+  const card = el('article', 'card');
+  card.appendChild(illustration(item.illustration, 'ill-big'));
+  card.appendChild(el('h1', null, loc(item.name)));
+  card.appendChild(el('p', 'price-big', formatPrice(item.price)));
+  if (item.duration || item.hit) {
+    const meta = el('p', 'meta');
+    if (item.duration) meta.appendChild(el('span', null, formatDuration(item.duration)));
+    if (item.hit) meta.appendChild(hitBadge());
+    card.appendChild(meta);
   }
-  window.scrollTo(0, 0);
-  renderDiag();
+  if (item.desc && loc(item.desc)) card.appendChild(el('p', 'desc', loc(item.desc)));
+  const includes = item.includes ? loc(item.includes) : null;
+  if (includes && includes.length) {
+    card.appendChild(el('h2', null, t('includes')));
+    const ul = el('ul', 'checks');
+    includes.forEach(function (text) { ul.appendChild(el('li', null, text)); });
+    card.appendChild(ul);
+  }
+  app.appendChild(card);
+
+  const bar = el('div', 'book-bar');
+  const book = externalLink('btn-book', waLink(fill(t('waTemplate'), {
+    name: loc(item.name),
+    price: formatPrice(item.price)
+  })));
+  const ico = el('span');
+  ico.innerHTML = ICONS.whatsapp;
+  book.appendChild(ico.firstChild);
+  book.appendChild(el('span', null, t('book')));
+  bar.appendChild(book);
+  app.appendChild(bar);
+
+  document.title = loc(item.name) + ' · ' + company.name;
+}
+
+// ─────────── Маршрутизация ───────────
+// #/ — главная, #/c/<catId> — категория, #/s/<catId>/<itemId> — услуга
+function findById(list, id) {
+  for (let i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+  return null;
+}
+
+function safeDecode(s) {
+  try { return decodeURIComponent(s); } catch (e) { return s; }
+}
+
+function parseRoute(hash) {
+  const parts = (hash || '').replace(/^#\/?/, '').split('/').filter(Boolean).map(safeDecode);
+  if (parts.length === 0) return { screen: 'home', key: 'home' };
+  if (parts[0] === 'c' && parts.length === 2) {
+    const cat = findById(priceData.categories, parts[1]);
+    if (cat) return { screen: 'cat', key: 'c/' + cat.id, cat: cat };
+  }
+  if (parts[0] === 's' && parts.length === 3) {
+    const cat = findById(priceData.categories, parts[1]);
+    const item = cat ? findById(cat.items, parts[2]) : null;
+    if (item) return { screen: 'item', key: 's/' + cat.id + '/' + item.id, cat: cat, item: item };
+  }
+  return null;
+}
+
+// Номер записи истории хранится в history.state.idx:
+// меньше текущего — это «назад» (восстановить прокрутку), иначе — «вперёд» (наверх).
+let currentIdx = 0;
+let currentRoute = null;
+const scrollPositions = {};
+const routeKeys = {};
+
+function render(route) {
+  const app = document.getElementById('app');
+  app.textContent = '';
+  if (route.screen === 'cat') renderCategory(app, route.cat);
+  else if (route.screen === 'item') renderItem(app, route.cat, route.item);
+  else renderHome(app);
+}
+
+function onRoute() {
+  let route = parseRoute(location.hash);
+  const unknown = !route;
+  if (unknown) route = { screen: 'home', key: 'home' };
+
+  const state = history.state;
+  let idx;
+  let isBack = false;
+  if (state && typeof state.idx === 'number') {
+    idx = state.idx;
+    isBack = idx < currentIdx;
+  } else {
+    idx = currentIdx + 1;
+  }
+  // Неизвестный адрес → главная, без лишней записи в истории
+  if (unknown) history.replaceState({ idx: idx }, '', '#/');
+  else history.replaceState({ idx: idx }, '');
+
+  currentIdx = idx;
+  currentRoute = route;
+  routeKeys[idx] = route.key;
+  render(route);
+  window.scrollTo(0, isBack ? (scrollPositions[idx] || 0) : 0);
+}
+
+function setLang(code) {
+  if (code === lang) return;
+  lang = code;
+  saveLang(code);
+  document.documentElement.lang = code;
+  const y = window.pageYOffset;
+  render(currentRoute);
+  window.scrollTo(0, y);
 }
 
 function init() {
-  var c = testData.company;
-  var ui = testData.ui;
-  setText('title', c.name);
-  setText('subtitle', ui.subtitle);
-  setText('contactsTitle', ui.contactsTitle);
-  setText('navTitle', ui.navTitle);
-  setText('diagTitle', ui.diagTitle);
-
-  var waSalon = $('waSalon');
-  waSalon.textContent = ui.waSalon;
-  waSalon.href = waLink(c.whatsappNumber, ui.waText);
-
-  var waTest = $('waTest');
-  waTest.textContent = ui.waTest;
-  waTest.href = waLink('', ui.waText);
-  setText('waNote', ui.waNote);
-
-  var call = $('call');
-  call.textContent = ui.call;
-  call.href = 'tel:+' + c.phone;
-
-  window.addEventListener('hashchange', render);
-  render();
+  document.documentElement.lang = lang;
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.addEventListener('scroll', function () {
+    scrollPositions[currentIdx] = window.pageYOffset;
+  }, { passive: true });
+  window.addEventListener('hashchange', onRoute);
+  onRoute();
 }
 
 init();
