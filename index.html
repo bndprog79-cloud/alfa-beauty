@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF6F1">
+<title>Alfa Beauty-Lab — тест</title>
+<style>
+  :root {
+    --bg: #FAF6F1;
+    --surface: #FFFFFF;
+    --surface-2: #F3EAE2;
+    --text: #3A2A24;
+    --text-2: #7A6A62;
+    --accent-strong: #9A5B60;
+    --on-accent: #FFFFFF;
+    --line: rgba(58,42,36,.10);
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 32px; }
+  h1 { font-size: 28px; margin: 8px 0 4px; }
+  .sub { color: var(--text-2); font-size: 14px; margin: 0 0 20px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 18px; margin: 0 0 12px; }
+  .btn {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 52px; padding: 12px 16px; margin-bottom: 10px;
+    border-radius: 16px; border: 0;
+    background: var(--accent-strong); color: var(--on-accent);
+    font: inherit; font-weight: 600; text-decoration: none; text-align: center;
+    cursor: pointer; width: 100%;
+  }
+  .btn.alt { background: var(--surface-2); color: var(--accent-strong); }
+  .btn:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+  .note { font-size: 13px; color: var(--text-2); margin: 0 0 10px; }
+  .screen-name { font-size: 22px; font-weight: 700; margin: 0 0 6px; }
+  .diag { font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace; color: var(--text-2); word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title"></h1>
+  <p class="sub" id="subtitle"></p>
+
+  <section class="card">
+    <h2 id="contactsTitle"></h2>
+    <a class="btn" id="waSalon" target="_blank" rel="noopener"></a>
+    <a class="btn alt" id="waTest" target="_blank" rel="noopener"></a>
+    <p class="note" id="waNote"></p>
+    <a class="btn alt" id="call"></a>
+  </section>
+
+  <section class="card">
+    <h2 id="navTitle"></h2>
+    <p class="screen-name" id="screenName"></p>
+    <p class="note" id="screenHint"></p>
+    <div id="navButtons"></div>
+  </section>
+
+  <section class="card">
+    <h2 id="diagTitle"></h2>
+    <div class="diag" id="diag"></div>
+  </section>
+</div>
+
+<script>
+'use strict';
+
+// Временные данные тестовой страницы (этап 1). На этапе 2 заменяются priceData из docs/data.js.
+var testData = {
+  company: {
+    name: 'Alfa Beauty-Lab',
+    phone: '77010000000',
+    whatsappNumber: '77010000000'
+  },
+  ui: {
+    subtitle: 'Тестовая страница (этап 1): проверка открытия на телефонах',
+    contactsTitle: 'Связь',
+    waSalon: 'WhatsApp: написать салону',
+    waTest: 'WhatsApp: проверка текста',
+    waNote: 'Первая кнопка — на номер салона (сейчас номер тестовый). Вторая — без номера: WhatsApp предложит выбрать чат, проверьте, что текст пришёл без искажений.',
+    waText: 'Здравствуйте! Хочу записаться на услугу: «Покрытие гель-лаком / руки» (от 20 000 ₸). Сәлеметсіз бе! Қызмет: «Шаш қию» — әғқңөұүһі ӘҒҚҢӨҰҮҺІ.',
+    call: 'Позвонить',
+    navTitle: 'Навигация и кнопка «Назад»',
+    diagTitle: 'Диагностика',
+    screens: {
+      home: { name: 'Экран 1: Главная', hint: 'Нажмите кнопку ниже, затем вернитесь системной кнопкой «Назад» или свайпом.', next: 'Открыть категорию ›' },
+      cat: { name: 'Экран 2: Категория', hint: '«Назад» должен вернуть на главную, а не закрыть страницу.', next: 'Открыть услугу ›' },
+      item: { name: 'Экран 3: Услуга', hint: '«Назад» должен вернуть на категорию.', next: '' }
+    },
+    titleSuffix: ' — тест'
+  }
+};
+
+function $(id) { return document.getElementById(id); }
+
+function setText(id, text) { $(id).textContent = text; }
+
+function waLink(number, text) {
+  return 'https://wa.me/' + (number || '') + '?text=' + encodeURIComponent(text);
+}
+
+function parseRoute(hash) {
+  var parts = (hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
+  if (parts.length === 0) return { screen: 'home' };
+  if (parts[0] === 'c' && parts.length === 2) return { screen: 'cat', cat: parts[1] };
+  if (parts[0] === 's' && parts.length === 3) return { screen: 'item', cat: parts[1], item: parts[2] };
+  return null;
+}
+
+function nextHash(route) {
+  if (route.screen === 'home') return '#/c/test';
+  if (route.screen === 'cat') return '#/s/test/item';
+  return '';
+}
+
+function renderDiag() {
+  var lines = [
+    'protocol: ' + location.protocol,
+    'hash: ' + (location.hash || '(пусто)'),
+    'history.length: ' + history.length,
+    'userAgent: ' + navigator.userAgent
+  ];
+  var box = $('diag');
+  box.textContent = '';
+  lines.forEach(function (line) {
+    var div = document.createElement('div');
+    div.textContent = line;
+    box.appendChild(div);
+  });
+}
+
+function render() {
+  var route = parseRoute(location.hash);
+  if (!route) {
+    // Неизвестный адрес → главная (без лишней записи в истории)
+    history.replaceState(null, '', '#/');
+    route = { screen: 'home' };
+  }
+  var screen = testData.ui.screens[route.screen];
+  setText('screenName', screen.name);
+  setText('screenHint', screen.hint);
+  document.title = screen.name + ' · ' + testData.company.name + testData.ui.titleSuffix;
+
+  var nav = $('navButtons');
+  nav.textContent = '';
+  var href = nextHash(route);
+  if (href) {
+    var a = document.createElement('a');
+    a.className = 'btn';
+    a.href = href;
+    a.textContent = screen.next;
+    nav.appendChild(a);
+  }
+  window.scrollTo(0, 0);
+  renderDiag();
+}
+
+function init() {
+  var c = testData.company;
+  var ui = testData.ui;
+  setText('title', c.name);
+  setText('subtitle', ui.subtitle);
+  setText('contactsTitle', ui.contactsTitle);
+  setText('navTitle', ui.navTitle);
+  setText('diagTitle', ui.diagTitle);
+
+  var waSalon = $('waSalon');
+  waSalon.textContent = ui.waSalon;
+  waSalon.href = waLink(c.whatsappNumber, ui.waText);
+
+  var waTest = $('waTest');
+  waTest.textContent = ui.waTest;
+  waTest.href = waLink('', ui.waText);
+  setText('waNote', ui.waNote);
+
+  var call = $('call');
+  call.textContent = ui.call;
+  call.href = 'tel:+' + c.phone;
+
+  window.addEventListener('hashchange', render);
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
