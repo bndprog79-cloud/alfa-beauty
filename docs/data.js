@@ -20,6 +20,7 @@ const priceData = {
     whatsappNumber: "77010000000", // для wa.me (без плюса)
     instagram: "https://instagram.com/alfa.beauty.lab",
     mapLink: "https://2gis.kz/almaty/search/%D0%90%D0%B1%D0%B0%D1%8F%20150",
+    timezone: "Asia/Almaty",       // часовой пояс салона для статуса «Открыто/Закрыто» (необязательно)
     hours: {
       // 1 = понедельник … 7 = воскресенье
       days: [1, 2, 3, 4, 5, 6, 7],

@@ -227,6 +227,9 @@
   .ornament span { width: 6px; height: 6px; border: 1px solid var(--gold); transform: rotate(45deg); }
   .addr { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 13px; }
   .addr .ico { width: 16px; height: 16px; color: var(--accent-strong); }
+  .status { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+  .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+  .status.is-open { color: var(--ok); }
 
   /* Быстрые действия */
   .actions { display: flex; justify-content: center; gap: 20px; padding: 4px 0 24px; }
@@ -241,6 +244,32 @@
   }
   .action .circle.wa { color: var(--wa); }
   .action:active .circle { transform: scale(.94); background: var(--surface-2); }
+
+  /* Поиск */
+  .search {
+    position: relative; display: flex; align-items: center; margin: 0 0 24px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); box-shadow: var(--shadow);
+    transition: border-color .2s var(--ease);
+  }
+  .search:focus-within { border-color: var(--accent); }
+  .search > .ico { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--text-2); pointer-events: none; }
+  .search input {
+    flex: 1; min-width: 0; height: 48px; padding: 0 4px 0 44px; border: 0; background: transparent;
+    color: var(--text); font: 16px/1.2 var(--font-body); -webkit-appearance: none; appearance: none;
+  }
+  .search input::placeholder { color: var(--text-2); opacity: 1; }
+  .search input::-webkit-search-cancel-button, .search input::-webkit-search-decoration { -webkit-appearance: none; display: none; }
+  .search input:focus-visible { outline: none; }
+  .search-clear {
+    flex: none; width: 44px; height: 44px; margin-right: 2px; border: 0; border-radius: 50%; padding: 0;
+    display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text-2); cursor: pointer;
+  }
+  .search-clear[hidden] { display: none; }
+  .search-clear .ico { width: 20px; height: 20px; stroke-width: 1.8; }
+  .search-clear:active { background: var(--press); }
+  .row .cat { color: var(--text-2); font-size: 13px; margin-top: 2px; }
+  .empty { text-align: center; color: var(--text-2); padding: 24px 0 32px; }
+  .empty:empty { padding: 0; }
 
   /* Категории */
   .section-title { font: 600 26px/1.2 var(--font-head); margin: 0 0 14px; }
@@ -395,6 +424,7 @@ const priceData = {
     whatsappNumber: "77010000000", // для wa.me (без плюса)
     instagram: "https://instagram.com/alfa.beauty.lab",
     mapLink: "https://2gis.kz/almaty/search/%D0%90%D0%B1%D0%B0%D1%8F%20150",
+    timezone: "Asia/Almaty",       // часовой пояс салона для статуса «Открыто/Закрыто» (необязательно)
     hours: {
       // 1 = понедельник … 7 = воскресенье
       days: [1, 2, 3, 4, 5, 6, 7],
@@ -1079,7 +1109,9 @@ const ICONS = {
   clock: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   instagram: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".6"/></svg>',
   back: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.5 6l-6 6 6 6"/></svg>',
-  chev: '<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.5 6l6 6-6 6"/></svg>'
+  chev: '<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.5 6l6 6-6 6"/></svg>',
+  search: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.8" cy="10.8" r="6.3"/><path d="M15.4 15.4l4.6 4.6"/></svg>',
+  close: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7l10 10M17 7L7 17"/></svg>'
 };
 
 // ─────────── Тема ───────────
@@ -1178,6 +1210,99 @@ function catHash(cat) { return '#/c/' + encodeURIComponent(cat.id); }
 
 function itemHash(cat, item) { return '#/s/' + encodeURIComponent(cat.id) + '/' + encodeURIComponent(item.id); }
 
+// ─────────── Статус работы ───────────
+// Время берётся в часовом поясе салона (company.timezone); если пояс не задан
+// или браузер его не знает — время устройства.
+const WEEKDAYS = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+let salonFormat; // undefined — ещё не создан, null — недоступен
+
+function salonClock(date) {
+  if (salonFormat === undefined) {
+    salonFormat = null;
+    if (company.timezone && typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+      try {
+        salonFormat = new Intl.DateTimeFormat('en-US', {
+          timeZone: company.timezone, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+        });
+        if (!salonFormat.formatToParts) salonFormat = null;
+      } catch (e) { salonFormat = null; }
+    }
+  }
+  if (salonFormat) {
+    try {
+      const p = {};
+      salonFormat.formatToParts(date).forEach(function (x) { p[x.type] = x.value; });
+      const day = WEEKDAYS[p.weekday];
+      const h = parseInt(p.hour, 10) % 24; // некоторые браузеры пишут полночь как «24»
+      const m = parseInt(p.minute, 10);
+      if (day && !isNaN(h) && !isNaN(m)) return { day: day, min: h * 60 + m };
+    } catch (e) { /* ниже — время устройства */ }
+  }
+  return { day: date.getDay() || 7, min: date.getHours() * 60 + date.getMinutes() };
+}
+
+function toMinutes(hhmm) {
+  const p = String(hhmm).split(':');
+  return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10);
+}
+
+// { open: true|false, text } или null, если часы работы не заданы
+function workStatus(date) {
+  const hours = company.hours;
+  if (!hours || !hours.open || !hours.close) return null;
+  const days = hours.days || [1, 2, 3, 4, 5, 6, 7];
+  const open = toMinutes(hours.open);
+  const close = toMinutes(hours.close);
+  if (!days.length || isNaN(open) || isNaN(close)) return null;
+  const now = salonClock(date);
+  if (days.indexOf(now.day) !== -1 && now.min >= open && now.min < close) {
+    return { open: true, text: fill(t('openUntil'), { time: hours.close }) };
+  }
+  return { open: false, text: fill(t('closedOpensAt'), { time: hours.open }) };
+}
+
+function paintStatus(node, status) {
+  node.textContent = status.text;
+  node.className = 'status ' + (status.open ? 'is-open' : 'is-closed');
+}
+
+function refreshStatus() {
+  const node = document.querySelector('.status');
+  const status = workStatus(new Date());
+  if (node && status) paintStatus(node, status);
+}
+
+// Обновление раз в минуту, в начале каждой минуты
+function scheduleStatus() {
+  refreshStatus();
+  setTimeout(scheduleStatus, 60000 - Date.now() % 60000 + 50);
+}
+
+// ─────────── Поиск ───────────
+let searchQuery = '';
+
+function normalize(s) {
+  return String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+}
+
+// Сначала совпадения в названии услуги, потом в названии категории, потом в описании
+function searchItems(query) {
+  const q = normalize(query);
+  if (!q) return [];
+  const groups = [[], [], []];
+  priceData.categories.forEach(function (cat) {
+    const inCat = normalize(loc(cat.name)).indexOf(q) !== -1;
+    cat.items.forEach(function (item) {
+      let g = -1;
+      if (normalize(loc(item.name)).indexOf(q) !== -1) g = 0;
+      else if (inCat) g = 1;
+      else if (item.desc && normalize(loc(item.desc)).indexOf(q) !== -1) g = 2;
+      if (g !== -1) groups[g].push({ cat: cat, item: item });
+    });
+  });
+  return groups[0].concat(groups[1], groups[2]);
+}
+
 // ─────────── Построение DOM ───────────
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -1251,6 +1376,49 @@ function ornament() {
   return o;
 }
 
+// Строка услуги: в списке категории — длительность и «Хит», в поиске — название категории
+function serviceRow(cat, item, withCategory) {
+  const row = el('a', 'row');
+  row.href = itemHash(cat, item);
+  row.appendChild(illustration(item.illustration, 'ill-mini'));
+  const info = el('div', 'info');
+  info.appendChild(el('div', 'name', loc(item.name)));
+  if (withCategory) {
+    info.appendChild(el('div', 'cat', loc(cat.name)));
+  } else if (item.duration || item.hit) {
+    const meta = el('div', 'meta');
+    if (item.duration) meta.appendChild(durationLabel(item.duration));
+    if (item.hit) meta.appendChild(hitBadge());
+    info.appendChild(meta);
+  }
+  row.appendChild(info);
+  row.appendChild(el('div', 'price num', formatPrice(item.price)));
+  row.appendChild(svgNode(ICONS.chev));
+  return row;
+}
+
+// Перерисовывает только результаты, поле ввода не трогает (фокус и клавиатура остаются)
+function showSearch(parts) {
+  const active = normalize(searchQuery) !== '';
+  parts.clear.hidden = searchQuery === '';
+  parts.browse.hidden = active;
+  parts.results.textContent = '';
+  parts.empty.textContent = '';
+  if (!active) return;
+  const found = searchItems(searchQuery);
+  if (!found.length) {
+    parts.empty.textContent = t('nothingFound');
+    return;
+  }
+  const list = el('ul', 'list');
+  found.forEach(function (r) {
+    const li = el('li');
+    li.appendChild(serviceRow(r.cat, r.item, true));
+    list.appendChild(li);
+  });
+  parts.results.appendChild(list);
+}
+
 function renderHome(screen) {
   const top = el('div', 'topbar');
   const switcher = el('div', 'lang');
@@ -1285,6 +1453,12 @@ function renderHome(screen) {
   addr.appendChild(svgNode(ICONS.pin));
   addr.appendChild(el('span', null, loc(company.address)));
   hero.appendChild(addr);
+  const status = workStatus(new Date());
+  if (status) {
+    const st = el('p');
+    paintStatus(st, status);
+    hero.appendChild(st);
+  }
   screen.appendChild(hero);
 
   const actions = el('nav', 'actions');
@@ -1303,7 +1477,50 @@ function renderHome(screen) {
   actions.appendChild(route);
   screen.appendChild(actions);
 
-  screen.appendChild(el('h2', 'section-title', t('categories')));
+  // Поиск: пока в поле есть текст, вместо категорий показываются результаты
+  const search = el('div', 'search');
+  search.setAttribute('role', 'search');
+  search.appendChild(svgNode(ICONS.search));
+  const input = el('input');
+  input.type = 'search';
+  input.placeholder = t('searchPlaceholder');
+  input.setAttribute('aria-label', t('searchPlaceholder'));
+  input.setAttribute('enterkeyhint', 'search');
+  input.setAttribute('autocomplete', 'off');
+  input.spellcheck = false;
+  input.value = searchQuery;
+  const clear = el('button', 'search-clear');
+  clear.type = 'button';
+  clear.setAttribute('aria-label', t('searchClear'));
+  clear.appendChild(svgNode(ICONS.close));
+  search.appendChild(input);
+  search.appendChild(clear);
+  screen.appendChild(search);
+
+  const results = el('div', 'results');
+  const empty = el('p', 'empty');
+  empty.setAttribute('aria-live', 'polite');
+  const browse = el('div', 'browse');
+  screen.appendChild(results);
+  screen.appendChild(empty);
+  screen.appendChild(browse);
+  const parts = { clear: clear, results: results, empty: empty, browse: browse };
+
+  input.addEventListener('input', function () {
+    searchQuery = input.value;
+    showSearch(parts);
+  });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') input.blur(); // спрятать клавиатуру
+  });
+  clear.addEventListener('click', function () {
+    input.value = '';
+    searchQuery = '';
+    showSearch(parts);
+    input.focus();
+  });
+
+  browse.appendChild(el('h2', 'section-title', t('categories')));
   const grid = el('div', 'grid');
   priceData.categories.forEach(function (cat, i) {
     const card = stagger(el('a', 'cat-card'), i);
@@ -1315,7 +1532,8 @@ function renderHome(screen) {
     card.appendChild(body);
     grid.appendChild(card);
   });
-  screen.appendChild(grid);
+  browse.appendChild(grid);
+  showSearch(parts);
 
   const footer = el('footer', 'footer');
   footer.appendChild(ornament());
@@ -1345,21 +1563,7 @@ function renderCategory(screen, cat) {
   const list = el('ul', 'list');
   cat.items.forEach(function (item, i) {
     const li = stagger(el('li'), i);
-    const row = el('a', 'row');
-    row.href = itemHash(cat, item);
-    row.appendChild(illustration(item.illustration, 'ill-mini'));
-    const info = el('div', 'info');
-    info.appendChild(el('div', 'name', loc(item.name)));
-    if (item.duration || item.hit) {
-      const meta = el('div', 'meta');
-      if (item.duration) meta.appendChild(durationLabel(item.duration));
-      if (item.hit) meta.appendChild(hitBadge());
-      info.appendChild(meta);
-    }
-    row.appendChild(info);
-    row.appendChild(el('div', 'price num', formatPrice(item.price)));
-    row.appendChild(svgNode(ICONS.chev));
-    li.appendChild(row);
+    li.appendChild(serviceRow(cat, item, false));
     list.appendChild(li);
   });
   screen.appendChild(list);
@@ -1518,6 +1722,11 @@ function init() {
   }, { passive: true });
   window.addEventListener('hashchange', onRoute);
   onRoute();
+  scheduleStatus();
+  // Телефон мог «спать» — при возврате на вкладку сразу обновить статус
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) refreshStatus();
+  });
 }
 
 init();
