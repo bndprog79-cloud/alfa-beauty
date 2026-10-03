@@ -21,6 +21,9 @@
  *            c-be — ягодный, c-go — золото, c-mt — металл;
  *   линии:   lc — тонкий контур (--ill-line), lh — светлые пряди (--ill-hair-light), lo — золото (--ill-gold).
  * Логотип — в прежнем стиле темы: lg / la — линии --gold / --accent; fl, fs, fg, fw — заливки.
+ *
+ * Растровые иллюстрации (feet-*): готовые картинки assets/<ключ>.png → WebP → data:image/webp;base64
+ * (объект RASTER и функция rasterBlock ниже; нужен ffmpeg).
  */
 'use strict';
 
@@ -455,21 +458,561 @@ ILL['color-roots'] = svg(BG +
   glow([142, 92], 4.5) + glow([150, 106], 3)
 );
 
+// ─────────── Руки: кисть руки и ногти (nails-*) ───────────
+// Тыльная сторона кисти: пальцы расслаблены и чуть разведены, кисть наклонена вправо,
+// большой палец справа повёрнут боком (его ноготь виден сбоку).
+
+// Палец в своей системе координат f(u, v): u — от основания к кончику, v — поперёк.
+// W0 — ширина у основания, W — у кончика; лёгкие утолщения у суставов
+function fingerD(f, L, W0, W) {
+  const w = (t) => W0 + (W - W0) * t;
+  const side = (k) => [0, 0.3, 0.62, 0.8].map((t) => f(t * L, k * (w(t) * (t === 0.62 ? 1.03 : 1)) / 2));
+  const r = W / 2, e = L - r;
+  const l = side(-1).concat([f(e, -r)]), rr = side(1).concat([f(e, r)]).reverse();
+  return smooth(l) + 'C' + pt(f(e + r * 0.56, -r)) + ' ' + pt(f(L, -r * 0.56)) + ' ' + pt(f(L, 0)) +
+    'C' + pt(f(L, r * 0.56)) + ' ' + pt(f(e + r * 0.56, r)) + ' ' + pt(rr[0]) + smooth(rr, true);
+}
+
+// Геометрия ногтя на кончике пальца: free — край ногтя (u), len — длина, w — полуширина, off — сдвиг поперёк
+function nailBox(L, W, o) {
+  o = o || {};
+  const ext = o.ext || 0, len = W * (o.lk || 0.92) + ext, w = W * (o.wk || 0.34);
+  return { top: L - W * 0.08 + ext, bot: L - W * 0.08 - W * (o.lk || 0.92), w: w, off: o.off || 0, len: len };
+}
+// Ноготь: мягкий скруглённый овал (shape 'almond' — миндаль со скруглённым кончиком)
+function nailD(f, L, W, o) {
+  const b = nailBox(L, W, o), w = b.w, top = b.top, bot = b.bot;
+  const g = (u, v) => f(u, v + b.off);
+  // кутикула (последний Q) — мягкая дуга, выпуклая к основанию пальца
+  if (o && o.shape === 'almond') {
+    const r = w * 0.42;
+    return 'M' + pt(g(bot + w * 0.5, -w)) +
+      'C' + pt(g(bot + (top - bot) * 0.55, -w * 1.06)) + ' ' + pt(g(top - r * 2.4, -r * 1.25)) + ' ' + pt(g(top - r * 0.9, -r)) +
+      'C' + pt(g(top - r * 0.2, -r * 0.8)) + ' ' + pt(g(top, -r * 0.4)) + ' ' + pt(g(top, 0)) +
+      'C' + pt(g(top, r * 0.4)) + ' ' + pt(g(top - r * 0.2, r * 0.8)) + ' ' + pt(g(top - r * 0.9, r)) +
+      'C' + pt(g(top - r * 2.4, r * 1.25)) + ' ' + pt(g(bot + (top - bot) * 0.55, w * 1.06)) + ' ' + pt(g(bot + w * 0.5, w)) +
+      'Q' + pt(g(bot - w * 0.55, 0)) + ' ' + pt(g(bot + w * 0.5, -w)) + 'Z';
+  }
+  return 'M' + pt(g(bot + w * 0.5, -w)) + 'C' + pt(g(bot + (top - bot) * 0.5, -w * 1.04)) + ' ' + pt(g(top - w * 1.1, -w * 1.02)) + ' ' + pt(g(top - w * 0.7, -w * 0.96)) +
+    'C' + pt(g(top - w * 0.15, -w * 0.9)) + ' ' + pt(g(top, -w * 0.5)) + ' ' + pt(g(top, 0)) +
+    'C' + pt(g(top, w * 0.5)) + ' ' + pt(g(top - w * 0.15, w * 0.9)) + ' ' + pt(g(top - w * 0.7, w * 0.96)) +
+    'C' + pt(g(top - w * 1.1, w * 1.02)) + ' ' + pt(g(bot + (top - bot) * 0.5, w * 1.04)) + ' ' + pt(g(bot + w * 0.5, w)) +
+    'Q' + pt(g(bot - w * 0.55, 0)) + ' ' + pt(g(bot + w * 0.5, -w)) + 'Z';
+}
+// Точка на ногте: t — доля длины от кутикулы (0) к краю (1), k — смещение поперёк (−1…1)
+function nailAt(f, L, W, t, k, o) {
+  const b = nailBox(L, W, o);
+  return f(b.bot + (b.top - b.bot) * t, k * b.w + b.off);
+}
+// Френч: кончик ногтя от линии «улыбки» до края
+function nailTipD(f, L, W, frac) {
+  const b = nailBox(L, W), w = b.w, top = b.top, a = top - (top - b.bot) * frac;
+  return 'M' + pt(f(a - w * 0.25, -w * 0.98)) + 'L' + pt(f(top - w * 0.7, -w * 0.96)) +
+    'C' + pt(f(top - w * 0.15, -w * 0.9)) + ' ' + pt(f(top, -w * 0.5)) + ' ' + pt(f(top, 0)) +
+    'C' + pt(f(top, w * 0.5)) + ' ' + pt(f(top - w * 0.15, w * 0.9)) + ' ' + pt(f(top - w * 0.7, w * 0.96)) +
+    'L' + pt(f(a - w * 0.25, w * 0.98)) + 'Q' + pt(f(a + w * 0.75, 0)) + ' ' + pt(f(a - w * 0.25, -w * 0.98)) + 'Z';
+}
+// Блик на ногте — узкий мазок вдоль левого края; k — ширина мазка
+function nailShine(f, L, W, o, k) {
+  const b = nailBox(L, W, o), w = b.w, kk = k || 1;
+  const a = b.bot + (b.top - b.bot) * 0.22, c = b.top - (b.top - b.bot) * 0.2, v = -w * 0.42 + b.off;
+  return 'M' + pt(f(a, v)) + 'Q' + pt(f((a + c) / 2, v - w * 0.3 * kk)) + ' ' + pt(f(c, v)) +
+    'Q' + pt(f((a + c) / 2, v + w * 0.14 * kk)) + ' ' + pt(f(a, v)) + 'Z';
+}
+// Страз: золотой камешек с бликом
+const strass = (c, r) => P('lc c-go', circle(c, r)) + P('c-mt', circle(add(c, [-r * 0.32, -r * 0.32]), r * 0.36), { op: 0.9 });
+
+// Система кисти H(u, v): u — вдоль пальцев (вверх), v — поперёк (вправо, к большому пальцу)
+const HA = -80, H = frame([95, 74], HA);
+// Пальцы слева направо: [u, v основания, поворот, длина, ширина у основания]; основания касаются друг друга
+const FINGER_SPECS = [
+  [-7, -16.9, -9, 32, 8.6],   // мизинец — самый короткий
+  [-1, -7.7, -3.5, 44, 9.8],  // безымянный — чуть длиннее указательного
+  [1, 2.4, 0, 48, 10.4],      // средний — самый длинный
+  [-1.5, 12.6, 4.5, 41.5, 10] // указательный
+];
+const FINGERS = FINGER_SPECS.map((g) => ({ f: frame(H(g[0], g[1]), HA + g[2]), L: g[3], W0: g[4], W: g[4] * 0.84 }));
+// Полуширина пальца на высоте u
+const halfW = (g, u) => (g.W0 + (g.W - g.W0) * u / g.L) / 2;
+// Большой палец: из правого края кисти вверх-вправо, виден сбоку; v > 0 — наружная сторона
+const THUMB = { f: frame(H(-36, 20), HA + 22), L: 33, W0: 14, W: 9.8 };
+
+// Перепонка между соседними пальцами: от боковой линии одного к боковой линии другого
+function valley(a, b) {
+  const pa = a.f(9, halfW(a, 9)), pb = b.f(9, -halfW(b, 9));
+  const mid = mul(add(a.f(3, halfW(a, 3)), b.f(3, -halfW(b, 3))), 0.5);
+  return [pa, mid, pb];
+}
+const VALLEYS = [0, 1, 2].map((i) => valley(FINGERS[i], FINGERS[i + 1]));
+// Левый край (мизинец → запястье) и правый край (указательный → перепонка → большой палец → запястье)
+const PK = FINGERS[0], IX = FINGERS[3], T = THUMB.f, TR = THUMB.W / 2, TL = THUMB.L;
+const HAND_LEFT = [PK.f(9, -halfW(PK, 9)), PK.f(1, -PK.W0 / 2 - 0.2), H(-14, -21.6), H(-27, -20.4), H(-40, -17.6), H(-52, -15.6)];
+const THUMB_IN = [IX.f(9, halfW(IX, 9)), IX.f(0, IX.W0 / 2), H(-10, 18.2), H(-18, 18.6), T(11, -6.4), T(22, -5.3), T(TL - TR, -TR)];
+const THUMB_CAP = 'C' + pt(T(TL - TR * 0.44, -TR)) + ' ' + pt(T(TL, -TR * 0.56)) + ' ' + pt(T(TL, 0)) +
+  'C' + pt(T(TL, TR * 0.56)) + ' ' + pt(T(TL - TR * 0.44, TR)) + ' ' + pt(T(TL - TR, TR));
+const THUMB_OUT = [T(TL - TR, TR), T(21, 6.2), T(10, 7.2), H(-40, 23.4), H(-46, 17.6), H(-52, 14.6)];
+const HAND_RIGHT = smooth(THUMB_IN) + THUMB_CAP + smooth(THUMB_OUT, true);
+// Заливка кисти: левый край, запястье, правый край снизу вверх, перепонки между пальцами
+const HAND_FILL = (function () {
+  const outRev = THUMB_OUT.slice().reverse(), inRev = THUMB_IN.slice().reverse();
+  const capRev = 'C' + pt(T(TL - TR * 0.44, TR)) + ' ' + pt(T(TL, TR * 0.56)) + ' ' + pt(T(TL, 0)) +
+    'C' + pt(T(TL, -TR * 0.56)) + ' ' + pt(T(TL - TR * 0.44, -TR)) + ' ' + pt(T(TL - TR, -TR));
+  let d = smooth(HAND_LEFT) + 'L' + pt(outRev[0]) + smooth(outRev, true) + capRev + smooth(inRev, true);
+  for (let i = 2; i >= 0; i--) {
+    const v = VALLEYS[i].slice().reverse();
+    d += 'L' + pt(v[0]) + smooth(v, true);
+  }
+  return d + 'Z';
+})();
+// Мягкая тень вдоль левого края кисти
+const HAND_SHADE = smooth([H(-6, -21.2), H(-14, -21), H(-27, -19.8), H(-40, -17), H(-52, -15)]) + 'L' + pt(H(-52, -11)) +
+  smooth([H(-52, -11), H(-40, -13), H(-27, -15.6), H(-14, -17.4), H(-6, -18)], true) + 'Z';
+
+// Тень вдоль левого края пальца
+function fingerShade(g) {
+  const f = g.f, L = g.L;
+  return 'M' + pt(f(0, -g.W0 * 0.48)) + 'Q' + pt(f(L * 0.5, -g.W * 0.54)) + ' ' + pt(f(L - g.W * 0.5, -g.W * 0.4)) +
+    'Q' + pt(f(L * 0.5, -g.W * 0.18)) + ' ' + pt(f(0, -g.W0 * 0.22)) + 'Z';
+}
+// Колечко на пальце: золотой ободок и камешек
+function ring(g, t) {
+  const f = g.f, u = g.L * t, h = halfW(g, u) + 0.5;
+  return P('lc c-go', 'M' + pt(f(u, -h)) + 'Q' + pt(f(u - 1.6, 0)) + ' ' + pt(f(u, h)) + 'L' + pt(f(u + 2.4, h)) +
+    'Q' + pt(f(u + 0.8, 0)) + ' ' + pt(f(u + 2.4, -h)) + 'Z') +
+    P('lc c-mt', circle(f(u + 0.3, 0), 2.1)) + P('c-go', circle(f(u + 0.8, -0.6), 0.7), { op: 0.8 });
+}
+
+// nail(f, L, W, i, o) — разметка ногтя для пальца i (0 — мизинец … 3 — указательный, 4 — большой);
+// o — геометрия ногтя (у большого пальца — узкий, сбоку). Колечко — на безымянном пальце.
+function hand(nail) {
+  let out = '';
+  FINGERS.forEach((g) => { out += P('lc c-sk', fingerD(g.f, g.L, g.W0, g.W)) + P('c-hm', fingerShade(g), { op: 0.18 }); });
+  out += P('c-sk', HAND_FILL) + P('c-hm', HAND_SHADE, { op: 0.18 });
+  out += P('lc', smooth(HAND_LEFT)) + P('lc', HAND_RIGHT) + VALLEYS.map((v) => P('lc', smooth(v))).join('');
+  out += ring(FINGERS[1], 0.3);
+  FINGERS.forEach((g, i) => { out += nail(g.f, g.L, g.W, i, {}); });
+  out += nail(THUMB.f, THUMB.L, THUMB.W, 4, { wk: 0.18, lk: 0.74, off: THUMB.W * 0.24 });
+  return out;
+}
+const merge = (a, b) => Object.assign({}, a, b);
+
+// nails-base: тыльная сторона кисти, ягодные ногти
+ILL['nails-base'] = svg(BG +
+  hand((f, L, W, i, o) => P('lc c-be', nailD(f, L, W, o))) +
+  glow([64, 40], 5) + glow([56, 56], 3)
+);
+
+// nails-gel: глянцевые карамельные ногти с крупным бликом
+ILL['nails-gel'] = svg(BG +
+  hand((f, L, W, i, o) => P('lc c-hm', nailD(f, L, W, o)) +
+    P('c-hl', nailShine(f, L, W, o, i === 4 ? 1 : 2), { op: 0.95 }) +
+    (i < 4 ? P('c-hl', circle(nailAt(f, L, W, 0.8, 0.45, o), W * 0.07)) : '')) +
+  glow([64, 40], 5) + glow([56, 56], 3) + glow([146, 30], 3.4)
+);
+
+// nails-classic: натуральные ногти и пилочка
+ILL['nails-classic'] = svg(BG +
+  hand((f, L, W, i, o) => P('lc c-be', nailD(f, L, W, o), { op: 0.25 }) +
+    (i < 4 ? P('c-mt', nailTipD(f, L, W, 0.2), { op: 0.8 }) : '')) +
+  P('lc c-be', rrect([51, 121], -80, 0, -3.4, 52, 6.8, 3.4)) +
+  P('c-hl', rrect([51, 121], -80, 5, -1.4, 42, 2.8, 1.4), { op: 0.7 }) +
+  glow([146, 30], 4.5) + glow([150, 46], 3)
+);
+
+// Перенос абсолютного пути (команды M L C Q H V Z): точка (x, y) → o + (x − 96, y − 120) · k
+function tx(d, o, k) {
+  let cmd = '', i = 0;
+  return d.replace(/([MLCQHVZ])|(-?[\d.]+)/g, (m, c, num) => {
+    if (c) { cmd = c; i = 0; return c; }
+    const v = parseFloat(num), axis = cmd === 'H' ? 0 : cmd === 'V' ? 1 : i++ % 2;
+    return n(axis === 0 ? o[0] + (v - 96) * k : o[1] + (v - 120) * k);
+  });
+}
+// Флакон лака: o — середина дна, k — масштаб (1 — как в nails-coat); cap — закрытая золотая крышка
+function polishBottle(o, k, cap) {
+  const t = (d) => tx(d, o, k), m = (x, y) => [o[0] + (x - 96) * k, o[1] + (y - 120) * k];
+  let out = P('lc c-be', t('M78 74C78 69 81 66 86 66H106C111 66 114 69 114 74V112C114 117 111 120 106 120H86C81 120 78 117 78 112Z')) +
+    P('c-hd', t('M104 70C109 72 110 76 110 80V110C110 114 108 116 104 116H96C103 110 106 92 104 70Z'), { op: 0.35 }) +
+    P('c-mt', t('M84 74C84 72 85 71 86.5 71C88 71 88.6 72 88.6 74V100C88.6 102 88 103 86.3 103C84.6 103 84 102 84 100Z'), { op: 0.85 }) +
+    P('c-mt', circle(m(86.3, 108), 2.2 * k), { op: 0.85 }) +
+    P('lc c-go', t('M88 66V58H104V66Z')) +
+    P('lc', t('M88 61H104'), { o: 0.5 });
+  if (cap) {
+    out += P('lc c-go', t('M86 58V28Q86 24 90 24H102Q106 24 106 28V58Z')) +
+      P('c-hl', t('M89 30Q89 28 91 28Q93 28 93 30V54H89Z'), { op: 0.85 }) +
+      P('c-hd', t('M101 28Q103 29 103 31V56H100Z'), { op: 0.25 });
+  }
+  return out;
+}
+
+// nails-coat: флакон гель-лака и золотая кисточка-крышка с каплей лака
+(function () {
+  const cap = frame([126, 86], -62); // кисточка-крышка: от щетины вверх к ручке
+  ILL['nails-coat'] = svg(BG +
+    // флакон: стекло с лаком, тень, блик, горлышко
+    polishBottle([96, 120], 1) +
+    // кисточка-крышка: золотая ручка с бликом и ободком
+    P('lc c-go', 'M' + pt(cap(18, -6.5)) + 'L' + pt(cap(52, -6)) + 'Q' + pt(cap(56, -6)) + ' ' + pt(cap(56, -2)) + 'L' + pt(cap(56, 2)) +
+      'Q' + pt(cap(56, 6)) + ' ' + pt(cap(52, 6)) + 'L' + pt(cap(18, 6.5)) + 'Z') +
+    P('c-hl', 'M' + pt(cap(22, -4.4)) + 'L' + pt(cap(50, -4.2)) + 'L' + pt(cap(50, -1.6)) + 'L' + pt(cap(22, -1.8)) + 'Z', { op: 0.85 }) +
+    P('c-hd', 'M' + pt(cap(22, 3)) + 'L' + pt(cap(50, 2.8)) + 'L' + pt(cap(50, 4.6)) + 'L' + pt(cap(22, 5)) + 'Z', { op: 0.25 }) +
+    P('lc c-hl', 'M' + pt(cap(13, -5)) + 'L' + pt(cap(18, -6.5)) + 'L' + pt(cap(18, 6.5)) + 'L' + pt(cap(13, 5)) + 'Z') +
+    P('lc c-mt', 'M' + pt(cap(6, -1.6)) + 'L' + pt(cap(13, -1.8)) + 'L' + pt(cap(13, 1.8)) + 'L' + pt(cap(6, 1.6)) + 'Z') +
+    P('lc c-be', 'M' + pt(cap(6, -3.2)) + 'C' + pt(cap(2, -3.4)) + ' ' + pt(cap(-3, -1.6)) + ' ' + pt(cap(-5, 0)) +
+      'C' + pt(cap(-3, 1.6)) + ' ' + pt(cap(2, 3.4)) + ' ' + pt(cap(6, 3.2)) + 'Z') +
+    // капля лака
+    P('lc c-be', drop([118, 104], 3.6)) +
+    glow([136, 112], 4.5) + glow([66, 50], 3.2)
+  );
+})();
+
+// nails-design: пастельные ногти разных цветов, френч и золотые стразы
+ILL['nails-design'] = svg(BG +
+  hand((f, L, W, i, o) => {
+    if (i === 0) return P('lc c-be', nailD(f, L, W, o), { op: 0.5 });                       // пудрово-розовый
+    if (i === 1) return P('lc c-mt', nailD(f, L, W, o)) + P('c-be', nailTipD(f, L, W, 0.4)); // френч
+    if (i === 2) return P('lc c-aq', nailD(f, L, W, o)) +                                       // мятный со стразами
+      [0.28, 0.56, 0.84].map((t) => strass(nailAt(f, L, W, t, 0, o), W * 0.11)).join('');
+    if (i === 3) return P('lc c-aq', nailD(f, L, W, o)) + strass(nailAt(f, L, W, 0.3, 0, o), W * 0.13);
+    return P('lc c-hl', nailD(f, L, W, o));                                                    // большой — сливочный
+  }) +
+  glow([64, 40], 5) + glow([56, 56], 3)
+);
+
+// nails-extension: длинные миндалевидные ногти со скруглённым кончиком и бликом
+ILL['nails-extension'] = svg(BG +
+  hand((f, L, W, i, o) => {
+    const e = merge(o, { ext: i === 4 ? W * 0.3 : W * 0.75, shape: 'almond' });
+    return P('lc c-be', nailD(f, L, W, e)) + P('c-mt', nailShine(f, L, W, e), { op: 0.75 });
+  }) +
+  glow([64, 40], 5) + glow([56, 56], 3)
+);
+
+// ─────────── Ресницы и брови (lashes-base, lash-*, brow-*) ───────────
+// Закрытый глаз: край века — плавная дуга вниз от внутреннего уголка A (слева) к внешнему B;
+// верхнее веко выпуклое, складка высоко; ресницы растут от края века вниз и изгибаются вверх-наружу,
+// к внешнему уголку длиннее. Бровь — над глазом на естественном расстоянии, как на лице.
+const EYE = { A: [46, 56], C: [97, 92], B: [150, 48] };
+const qp = (t) => { const m = 1 - t; return [0, 1].map((k) => m * m * EYE.A[k] + 2 * m * t * EYE.C[k] + t * t * EYE.B[k]); };
+const qn = (t) => { // нормаль вниз (от века к ресницам)
+  const m = 1 - t, d = [0, 1].map((k) => 2 * m * (EYE.C[k] - EYE.A[k]) + 2 * t * (EYE.B[k] - EYE.C[k]));
+  return norm(perp(d));
+};
+// Одна ресница: сужающийся штрих от основания base под углом ang (градусы), длина l, ширина w, изгиб bend
+function lashD(m, base, ang, l, w, bend) {
+  const d = dirDeg(ang), p = perp(d);
+  const tip = add(base, add(mul(d, l), mul(p, bend * 0.6)));
+  const c = add(base, add(mul(d, l * 0.55), mul(p, bend)));
+  return 'M' + pt(m(add(base, mul(p, -w / 2)))) + 'Q' + pt(m(c)) + ' ' + pt(m(tip)) +
+    'Q' + pt(m(add(c, mul(p, w * 0.3)))) + ' ' + pt(m(add(base, mul(p, w / 2)))) + 'Z';
+}
+// Ресницы: n пучков вдоль века, в пучке per ресниц с разлётом spread; lk — длина, w — толщина у основания, curl — изгиб
+function lashes(m, o) {
+  let d = '';
+  for (let i = 0; i < o.n; i++) {
+    const t = 0.05 + 0.91 * i / (o.n - 1);
+    const base = add(qp(t), mul(qn(t), 0.8));
+    const l = (8 + 23 * Math.pow(t, 1.1)) * (t > 0.84 ? 1 - (t - 0.84) * 2.4 : 1) * (o.lk || 1);
+    const ang = (o.ang0 || 108) - (o.ang1 || 64) * t;
+    for (let j = 0; j < o.per; j++) {
+      const s = o.per === 1 ? 0 : (j / (o.per - 1) - 0.5) * 2;
+      d += lashD(m, add(base, mul(dirDeg(ang - 90), s * 0.9)), ang + s * (o.spread || 0), l * (1 - Math.abs(s) * 0.14),
+        o.w || 2, (o.curl != null ? o.curl : -0.42) * l);
+    }
+  }
+  return P('c-ik', d);
+}
+// Глаз: выпуклое веко (кожа, тень у складки, блик), складка, подводка по краю века и ресницы
+function eye(m, o) {
+  o = o || {};
+  m = m || ((p) => p);
+  const M = (pts) => pts.map(m);
+  const lid = [], crease = [], shade = [], shine = [], top = [], bot = [];
+  for (let i = 0; i <= 14; i++) {
+    const t = i / 14, up = mul(qn(t), -1), h = Math.sin(Math.PI * t);
+    lid.push(qp(t));
+    crease.push(add(qp(t), mul(up, 2 + 32 * h)));
+    shade.push(add(qp(t), mul(up, 1.5 + 21 * h)));
+    shine.push(add(qp(t), mul(up, 1 + 10 * h)));
+  }
+  const rev = (a) => a.slice().reverse();
+  let out = P('c-sk', smooth(M(lid)) + smooth(M(rev(crease)), true) + 'Z');
+  out += P(o.shadow || 'c-hm', smooth(M(shade)) + smooth(M(rev(crease)), true) + 'Z', { op: o.shadowOp || 0.32 });
+  // блик посередине века — веко выглядит выпуклым
+  const sh = shine.slice(3, 12), sh2 = shade.slice(3, 12).map((p, k) => add(p, mul(sub(sh[k], p), 0.25)));
+  out += P('c-hl', smooth(M(sh)) + smooth(M(rev(sh2)), true) + 'Z', { op: 0.5 });
+  out += P('lc', smooth(M(crease.slice(1, 14))), { o: 0.6 });
+  // подводка: полоса вдоль края века, толще к внешнему уголку
+  const th = (t) => (o.liner || 2.2) * (0.3 + Math.sin(Math.PI * Math.min(t, 0.97)) * 0.7 * (0.55 + 0.45 * t));
+  for (let i = 0; i <= 14; i++) { const t = i / 14; top.push(add(qp(t), mul(qn(t), -th(t) * 0.3))); }
+  for (let i = 14; i >= 0; i--) { const t = i / 14; bot.push(add(qp(t), mul(qn(t), th(t) * 0.7))); }
+  let liner = smooth(M(top)) + 'L' + pt(m(bot[0])) + smooth(M(bot), true) + 'Z';
+  if (o.wing) liner += 'M' + pt(m(add(EYE.B, [-12, 3.6]))) + 'Q' + pt(m(add(EYE.B, [6, -1]))) + ' ' + pt(m(add(EYE.B, [17, -11]))) +
+    'Q' + pt(m(add(EYE.B, [4, 5]))) + ' ' + pt(m(add(EYE.B, [-12, 7.4]))) + 'Z';
+  out += P('c-ik', liner);
+  if (o.lashes) out += lashes(m, o.lashes);
+  return out;
+}
+
+// Бровь (свои координаты: начало у переносицы x 0, хвост x 100): широкое округлое начало,
+// плавный подъём к изгибу на 2/3 длины, тонкий заострённый хвост
+const BROW_TOP = [[0, -1], [12, -6], [30, -10.6], [50, -14.6], [66, -17], [78, -14], [90, -8], [100, -2]];
+const BROW_BOT = [[0, 12], [12, 10.4], [30, 6], [50, 1.6], [66, -1.6], [78, -2.6], [90, -2.6], [100, -2]];
+const lerpPts = (pts) => (x) => {
+  for (let i = 0; i < pts.length - 1; i++) {
+    if (x <= pts[i + 1][0]) { const a = pts[i], b = pts[i + 1]; return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); }
+  }
+  return pts[pts.length - 1][1];
+};
+const browTop = lerpPts(BROW_TOP), browBot = lerpPts(BROW_BOT);
+// Контур брови от начала до x1 (x1 = 100 — вся бровь)
+function browPart(m, x1) {
+  const top = BROW_TOP.filter((p) => p[0] < x1).concat([[x1, browTop(x1)]]);
+  const bot = [[x1, browBot(x1)]].concat(BROW_BOT.filter((p) => p[0] < x1).reverse());
+  return smooth(top.map(m)) + (x1 < 100 ? 'L' + pt(m(bot[0])) : '') + smooth(bot.map(m), true) +
+    'C' + pt(m([-3, 10])) + ' ' + pt(m([-3, 1])) + ' ' + pt(m([0, -1])) + 'Z';
+}
+// Волоски: у начала — вверх, дальше по диагонали к хвосту; combed — уложенные параллельно (ламинирование)
+function browHairs(m, combed) {
+  let d = '';
+  for (let x = 1, i = 0; x < 96; x += 1.9, i++) {
+    const tp = browTop(x), bt = browBot(x), hgt = bt - tp;
+    // направление роста: у начала почти вертикально вверх, к изгибу — по диагонали, у хвоста — вдоль брови
+    const a = combed ? -40 + x * 0.3 : x < 12 ? -88 + x * 2.2 : x < 66 ? -62 + (x - 12) * 0.66 : -26 + (x - 66) * 0.85;
+    const rows = hgt > 10 ? 3 : hgt > 5 ? 2 : 1;
+    for (let r = 0; r < rows; r++) {
+      const y = bt - 0.4 - (hgt - 0.8) * (r + (i % 2) * 0.45) / rows;
+      const l = Math.min(12, hgt * 0.9 + 3);
+      d += lashD(m, [x, y], a + ((i * 7 + r * 13) % 9 - 4), l, 0.9, combed ? -0.4 : 0.9);
+    }
+  }
+  return P('c-br', d);
+}
+// Бровь целиком: мягкая основа и волоски поверх
+const brow = (m, combed) => P('c-br', browPart(m, 100), { op: 0.78 }) + browHairs(m, combed);
+const at = (o, k) => (p) => [o[0] + p[0] * k, o[1] + p[1] * k];
+// Бровь над глазом — на естественном расстоянии
+const BROW_M = at([40, 29], 1.08);
+
+// lashes-base: закрытый глаз с длинными ресницами и бровь
+ILL['lashes-base'] = svg(BG +
+  brow(BROW_M) +
+  eye(null, { lashes: { n: 12, per: 1, w: 2.2, lk: 1.1 } }) +
+  glow([162, 30], 4.5) + glow([30, 96], 3)
+);
+// Без брови глаз чуть ниже — по центру рамки
+const EYE_LOW = at([0, 7], 1);
+// lash-classic: редкие отдельные ресницы
+ILL['lash-classic'] = svg(BG +
+  eye(EYE_LOW, { lashes: { n: 9, per: 1, w: 2.3, lk: 1 } }) +
+  glow([152, 28], 5) + glow([164, 42], 3)
+);
+// lash-2d: заметно гуще — по две
+ILL['lash-2d'] = svg(BG +
+  eye(EYE_LOW, { lashes: { n: 13, per: 2, w: 1.8, spread: 9, lk: 1.04 } }) +
+  glow([152, 28], 5) + glow([164, 42], 3)
+);
+// lash-3d: ещё гуще — по три
+ILL['lash-3d'] = svg(BG +
+  eye(EYE_LOW, { lashes: { n: 15, per: 3, w: 1.55, spread: 13, lk: 1.08 } }) +
+  glow([152, 28], 5) + glow([164, 42], 3)
+);
+// lash-mega: пушистые веера
+ILL['lash-mega'] = svg(BG +
+  eye(EYE_LOW, { liner: 2.8, lashes: { n: 16, per: 5, w: 1.25, spread: 19, lk: 1.14 } }) +
+  glow([152, 28], 5) + glow([164, 42], 3)
+);
+// lash-hollywood: максимально пышные веера и блёстки
+ILL['lash-hollywood'] = svg(BG +
+  eye(EYE_LOW, { liner: 3.2, lashes: { n: 18, per: 7, w: 1.2, spread: 24, lk: 1.24 } }) +
+  P('c-go', circle([82, 79], 1.4)) + P('c-go', circle([112, 80], 1.2)) + P('c-go', circle([134, 68], 1.3)) +
+  glow([150, 26], 6) + glow([36, 34], 3.4) + glow([166, 44], 3)
+);
+// lash-lami: ресницы изогнуты вверх, блеск
+ILL['lash-lami'] = svg(BG +
+  eye(EYE_LOW, { lashes: { n: 11, per: 1, w: 2.2, lk: 1.02, ang0: 96, ang1: 58, curl: -0.78 } }) +
+  glow([152, 28], 5) + glow([164, 42], 3) + glow([36, 96], 2.6)
+);
+
+// Брови: та же композиция «бровь над глазом», ресницы естественные
+const browEye = () => eye(null, { lashes: { n: 11, per: 1, w: 2, lk: 0.8 } });
+
+// brow-shape: бровь и пинцет у хвоста
+ILL['brow-shape'] = svg(BG +
+  browEye() + brow(BROW_M) +
+  P('lc c-mt', 'M162 8L167 12L150 36Q148.6 37.8 147.6 36.8Z') +
+  P('lc c-mt', 'M157.4 9L162.6 5.4L148.4 35Q147.2 37 146.2 35.8Z') +
+  P('lc c-go', 'M159 12L164.6 15.6L162.4 19.4L156.6 15.8Z') +
+  glow([30, 30], 4.5) + glow([30, 96], 3)
+);
+
+// brow-tint: бровь окрашивается — у начала светлее, к хвосту темнее; кисточка с краской у хвоста
+ILL['brow-tint'] = svg(BG +
+  browEye() + brow(BROW_M) +
+  // плавный переход: светлые слои от начала брови разной длины накладываются друг на друга
+  [10, 18, 26, 34, 42, 50].map((x) => P('c-hm', browPart(BROW_M, x), { op: 0.14 })).join('') +
+  brush([150, 36], -26, 0.56, 'c-br', 'c-be') +
+  glow([30, 30], 4.5) + glow([30, 96], 3)
+);
+
+// brow-lami: гладкая уложенная бровь с бликом
+ILL['brow-lami'] = svg(BG +
+  browEye() + brow(BROW_M, true) +
+  P('c-hl', smooth([[16, -2.2], [34, -6.6], [52, -10.4], [66, -12.4]].map(BROW_M)) +
+    smooth([[66, -10.6], [52, -8.4], [34, -4.6], [16, -0.2]].map(BROW_M), true) + 'Z', { op: 0.6 }) +
+  glow([30, 30], 4) + glow([158, 26], 5.4) + glow([168, 42], 2.8)
+);
+
+// ─────────── Макияж (makeup-*) ───────────
+// Поворот локальных координат: (x, y) → o + rot((x, y), ang) · k
+const place = (o, ang, k) => (x, y) => add(o, mul(rot([x, y], ang), k || 1));
+// Помада: золотой футляр и ягодный стержень со скошенным кончиком (o — середина дна)
+function lipstick(o, ang, k) {
+  const g = place(o, ang, k), q = (pts) => 'M' + pts.map((p) => pt(g(p[0], p[1]))).join('L') + 'Z';
+  const bullet = 'M' + pt(g(-6, -36)) + 'L' + pt(g(-6, -50)) + 'C' + pt(g(-6, -54)) + ' ' + pt(g(-3, -56)) + ' ' + pt(g(0, -57.6)) +
+    'L' + pt(g(4.4, -60)) + 'Q' + pt(g(6, -60.8)) + ' ' + pt(g(6, -58.6)) + 'L' + pt(g(6, -36)) + 'Z';
+  return P('lc c-go', q([[-9.5, 0], [-9.5, -26], [9.5, -26], [9.5, 0]])) +
+    P('c-hl', q([[-7, -2], [-7, -24], [-4.4, -24], [-4.4, -2]]), { op: 0.8 }) +
+    P('c-hd', q([[5.6, -2], [5.6, -24], [7.6, -24], [7.6, -2]]), { op: 0.25 }) +
+    P('lc c-hl', q([[-7.6, -26], [-7.6, -36], [7.6, -36], [7.6, -26]])) +
+    P('lc c-be', bullet) +
+    P('c-mt', q([[-3.8, -38], [-3.8, -50], [-2, -52], [-2, -38]]), { op: 0.6 });
+}
+// Пушистая кисть для макияжа: o — конец ручки, щетина в сторону ang−90; tipCls — пудра на кончике
+function fluffyBrush(o, ang, k, tipCls) {
+  const g = place(o, ang, k);
+  const P2 = (x, y) => pt(g(x, y));
+  const handle = 'M' + P2(-2.6, 0) + 'Q' + P2(-4, -22) + ' ' + P2(-4.6, -40) + 'L' + P2(4.6, -40) + 'Q' + P2(4, -22) + ' ' + P2(2.6, 0) +
+    'Q' + P2(0, 1.6) + ' ' + P2(-2.6, 0) + 'Z';
+  const ferrule = 'M' + P2(-4.8, -40) + 'L' + P2(-5.4, -52) + 'L' + P2(5.4, -52) + 'L' + P2(4.8, -40) + 'Z';
+  const bristle = 'M' + P2(-5.4, -52) + 'C' + P2(-11, -58) + ' ' + P2(-11, -72) + ' ' + P2(-5, -78) +
+    'C' + P2(-2, -81) + ' ' + P2(2, -81) + ' ' + P2(5, -78) + 'C' + P2(11, -72) + ' ' + P2(11, -58) + ' ' + P2(5.4, -52) + 'Z';
+  const tip = 'M' + P2(-9.6, -68) + 'C' + P2(-8, -78) + ' ' + P2(-3, -80.4) + ' ' + P2(0, -80.4) +
+    'C' + P2(3, -80.4) + ' ' + P2(8, -78) + ' ' + P2(9.6, -68) + 'Q' + P2(0, -72) + ' ' + P2(-9.6, -68) + 'Z';
+  return P('lc c-hd', handle) + P('c-hl', 'M' + P2(-2, -6) + 'Q' + P2(-3, -22) + ' ' + P2(-3.2, -36) + 'L' + P2(-1.6, -36) +
+    'Q' + P2(-1.4, -22) + ' ' + P2(-0.6, -6) + 'Z', { op: 0.5 }) +
+    P('lc c-go', ferrule) + P('lc c-hm', bristle) + P(tipCls || 'c-be', tip, { op: 0.45 }) +
+    P('lc', 'M' + P2(-3, -56) + 'Q' + P2(-5, -66) + ' ' + P2(-3, -74), { o: 0.35 }) + P('lc', 'M' + P2(2.4, -56) + 'Q' + P2(3.6, -66) + ' ' + P2(2.2, -74), { o: 0.35 });
+}
+
+// makeup-base: помада и кисть для макияжа
+ILL['makeup-base'] = svg(BG +
+  fluffyBrush([128, 124], 16, 1.02, 'c-be') +
+  lipstick([90, 120], -12, 1.08) +
+  glow([62, 40], 5) + glow([150, 34], 3)
+);
+
+// makeup-day: палетка нюдовых теней и мягкая кисть
+(function () {
+  const pans = [['c-hl', 1], ['c-sk', 1], ['c-hm', 1], ['c-be', 0.45], ['c-hd', 1], ['c-go', 1]];
+  let s = P('lc c-be', rrect([0, 0], 0, 54, 50, 86, 58, 10)) + P('c-hd', rrect([0, 0], 0, 60, 56, 74, 46, 6), { op: 0.25 });
+  pans.forEach((p, i) => {
+    const c = [72 + (i % 3) * 25, 68 + Math.floor(i / 3) * 22];
+    s += P('lc ' + p[0], circle(c, 9), p[1] < 1 ? { op: p[1] } : {}) + P('c-mt', circle(add(c, [-3.2, -3.2]), 2), { op: 0.5 });
+  });
+  ILL['makeup-day'] = svg(BG + s +
+    fluffyBrush([160, 124], -34, 0.74, 'c-hm') +
+    glow([60, 36], 5) + glow([150, 32], 3)
+  );
+})();
+
+// makeup-evening: глаз со стрелкой и губы с яркой помадой
+(function () {
+  const lips = 'M74 98C80 93 87 84.6 93.4 85.4C96.6 85.8 98.4 87.6 100 89.6C101.6 87.6 103.4 85.8 106.6 85.4' +
+    'C113 84.6 120 93 126 98C119 108 109 112.6 100 112.6C91 112.6 81 108 74 98Z';
+  ILL['makeup-evening'] = svg(BG +
+    eye(at([25, 4], 0.75), { liner: 3.4, wing: true, shadow: 'c-be', shadowOp: 0.28, lashes: { n: 10, per: 2, w: 1.2, spread: 8, lk: 0.9 } }) +
+    P('lc c-be', lips) +
+    P('c-hd', 'M74 98C80 93 87 84.6 93.4 85.4C96.6 85.8 98.4 87.6 100 89.6C101.6 87.6 103.4 85.8 106.6 85.4C113 84.6 120 93 126 98' +
+      'C116 96.4 108 97.6 100 99C92 97.6 84 96.4 74 98Z', { op: 0.22 }) +
+    P('lc', 'M76 98C86 97 92 98.4 100 99.6C108 98.4 114 97 124 98') +
+    P('c-mt', 'M94 104.6Q100 102.6 108 104.4Q101 107 94 104.6Z', { op: 0.75 }) +
+    glow([148, 40], 5) + glow([56, 86], 3)
+  );
+})();
+
+// ─────────── Растровые иллюстрации (готовые картинки) ───────────
+// Ключ берёт свой файл assets/<ключ>.png, а если его нет — общий файл группы (fallback).
+const RASTER = {
+  'feet-base': { fallback: 'feet-gel' },
+  'feet-classic': { fallback: 'feet-gel' },
+  'feet-gel': { fallback: 'feet-gel' },
+  'feet-coat': { fallback: 'feet-gel' }
+};
+// Настройки кадра для файла (по имени без .png); у файла без настроек всё по центру:
+//   crop  — обрезать поля до конвертации (ffmpeg crop=ширина:высота:x:y), например чтобы убрать огрехи по краям;
+//   pos   — какая часть остаётся в крупных рамках (CSS object-position);
+//   focus — точка, к которой кадрируется и увеличивается 48px; zoom — увеличение в 48px.
+const RASTER_FILES = {
+  // feet-gel: убраны светлые пятна в верхних углах (y < 12) и тонкая белая рамка справа (x ≈ 443) и снизу (y ≈ 397)
+  'feet-gel': { crop: '438:382:0:12', pos: '50% 100%', focus: '100% 100%', zoom: 1.45 }
+};
+// Папка с картинками; для проверки можно указать другую: ILL_ASSETS=путь
+const ASSETS = process.env.ILL_ASSETS || path.join(ROOT, 'assets');
+const WEBP_WIDTH = 480, WEBP_QUALITY = 80, WEBP_LIMIT = 40 * 1024;
+
+// PNG → WebP через ffmpeg: ширина 480, качество 80; если файл больше 40 КБ — качество ниже (не меньше 50)
+function toWebp(file, crop) {
+  const { execFileSync } = require('child_process');
+  const os = require('os');
+  const out = path.join(os.tmpdir(), 'alfa-ill-' + process.pid + '.webp');
+  let q = WEBP_QUALITY, buf;
+  for (;;) {
+    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', file, '-vf', (crop ? 'crop=' + crop + ',' : '') + 'scale=\'min(' + WEBP_WIDTH + ',iw)\':-2:flags=lanczos',
+      '-c:v', 'libwebp', '-quality', String(q), '-compression_level', '6', '-frames:v', '1', out]);
+    buf = fs.readFileSync(out);
+    if (buf.length <= WEBP_LIMIT || q <= 50) break;
+    q -= 5;
+  }
+  fs.unlinkSync(out);
+  if (buf.length > WEBP_LIMIT) console.warn('Внимание: ' + path.basename(file) + ' — ' + (buf.length / 1024).toFixed(1) + ' КБ даже при качестве ' + q);
+  return { data: 'data:image/webp;base64,' + buf.toString('base64'), bytes: buf.length, q: q };
+}
+
+// Каждая картинка встраивается один раз (ILL_IMG), ключи ссылаются на неё через rasterIll()
+function rasterBlock() {
+  const imgs = {}, uses = {};
+  for (const key of Object.keys(RASTER)) {
+    const own = path.join(ASSETS, key + '.png'), common = path.join(ASSETS, RASTER[key].fallback + '.png');
+    const file = fs.existsSync(own) ? own : fs.existsSync(common) ? common : null;
+    if (!file) { console.warn('Нет картинки для ' + key + ' (ожидается assets/' + key + '.png) — будет заглушка'); continue; }
+    const name = path.basename(file, '.png');
+    if (!imgs[name]) {
+      imgs[name] = toWebp(file, (RASTER_FILES[name] || {}).crop);
+      console.log('  assets/' + name + '.png → WebP ' + (imgs[name].bytes / 1024).toFixed(1) + ' КБ (качество ' + imgs[name].q + ')');
+    }
+    uses[key] = name;
+  }
+  const names = Object.keys(imgs);
+  // Картинка и её кадр: style задаёт CSS-переменные --pos, --focus, --zoom
+  let js = 'const ILL_IMG = {\n' + names.map((nm) => {
+    const o = RASTER_FILES[nm] || {};
+    const style = '--pos: ' + (o.pos || '50% 50%') + '; --focus: ' + (o.focus || '50% 50%') + '; --zoom: ' + (o.zoom || 1);
+    return "  '" + nm + "': { src: '" + imgs[nm].data + "', style: '" + style + "' }";
+  }).join(',\n') + '\n};\n';
+  js += "function rasterIll(name) {\n" +
+    "  return '<img class=\"ilr\" src=\"' + ILL_IMG[name].src + '\" alt=\"\" decoding=\"async\" style=\"' + ILL_IMG[name].style + '\">';\n}\n";
+  const entries = Object.keys(uses).map((k) => "  '" + k + "': rasterIll('" + uses[k] + "')");
+  return { js: js, entries: entries, bytes: names.reduce((s, nm) => s + imgs[nm].data.length, 0), keys: Object.keys(uses) };
+}
+
 // ─────────── Запись в index.html ───────────
 function build() {
   const keys = Object.keys(ILL);
-  let js = 'const ILLUSTRATIONS = {\n';
-  js += keys.map((k) => "  '" + k + "':\n    '" + ILL[k] + "'").join(',\n');
-  js += '\n};';
   for (const k of keys) {
     if (/#[0-9a-f]{3,8}\b|rgb|hsl|\bid=|url\(/i.test(ILL[k])) throw new Error('Запрещённый цвет или id в ' + k);
   }
+  const raster = rasterBlock();
+  let js = raster.js + 'const ILLUSTRATIONS = {\n';
+  js += keys.map((k) => "  '" + k + "':\n    '" + ILL[k] + "'").concat(raster.entries).join(',\n');
+  js += '\n};';
   const html = fs.readFileSync(INDEX, 'utf8');
   const re = /\/\*ILL:START\*\/[\s\S]*?\/\*ILL:END\*\//;
   if (!re.test(html)) throw new Error('В index.html нет меток /*ILL:START*/ … /*ILL:END*/');
   fs.writeFileSync(INDEX, html.replace(re, () => '/*ILL:START*/\n' + js + '\n/*ILL:END*/'));
   const bytes = keys.reduce((s, k) => s + Buffer.byteLength(ILL[k]), 0);
-  console.log('Иллюстраций: ' + keys.length + ' (' + keys.join(', ') + '), ' + (bytes / 1024).toFixed(1) + ' КБ');
+  console.log('Иллюстраций SVG: ' + keys.length + ' (' + keys.join(', ') + '), ' + (bytes / 1024).toFixed(1) + ' КБ');
+  console.log('Картинок: ' + raster.keys.length + ' (' + raster.keys.join(', ') + '), встроено ' + (raster.bytes / 1024).toFixed(1) + ' КБ');
 }
 
 // Запись в index.html — только при прямом запуске (не при подключении через require)

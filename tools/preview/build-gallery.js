@@ -30,7 +30,7 @@ const ctx = {};
 vm.runInNewContext(head + '\nthis.out = { priceData, ILLUSTRATIONS, ICONS };', ctx);
 const { priceData, ILLUSTRATIONS, ICONS } = ctx.out;
 
-const filter = (process.argv[2] || 'logo,hair,color').split(',');
+const filter = (process.argv[2] || 'logo,hair,color,nails,feet,lash,brow,makeup').split(',');
 const keys = Object.keys(ILLUSTRATIONS).filter((k) => filter.some((f) => k === f || k.indexOf(f) === 0));
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
