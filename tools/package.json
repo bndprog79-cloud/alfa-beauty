@@ -1,0 +1,12 @@
+{
+  "name": "alfa-beauty-tools",
+  "private": true,
+  "description": "Вспомогательные скрипты прайса Alfa Beauty-Lab (в продукт не входят)",
+  "scripts": {
+    "pwa": "node pwa/build-pwa.js",
+    "qr": "node qr/build-qr.js"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
