@@ -59,7 +59,13 @@ const priceData = {
       openInBrowser: "Открыть прайс в браузере",
       noscriptText: "Для просмотра прайса откройте его в браузере или позвоните нам.",
       waGreeting: "Здравствуйте! Хочу записаться в салон.",
-      waTemplate: "Здравствуйте! Хочу записаться на услугу: {name} ({price})."
+      waTemplate: "Здравствуйте! Хочу записаться на услугу: {name} ({price}).",
+      promo: "Акция",
+      promosTitle: "Акции",
+      promoUntil: "до {date}",
+      promoSave: "Выгода {sum}",
+      oldPrice: "Старая цена",
+      waTemplatePromo: "Здравствуйте! Хочу записаться на услугу по акции: {name} ({price})."
     },
     kk: {
       langLabel: "KZ",
@@ -90,7 +96,13 @@ const priceData = {
       openInBrowser: "Прайсты браузерде ашу",
       noscriptText: "Прайсты көру үшін оны браузерде ашыңыз немесе бізге қоңырау шалыңыз.",
       waGreeting: "Сәлеметсіз бе! Салонға жазылғым келеді.",
-      waTemplate: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name} ({price})."
+      waTemplate: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name} ({price}).",
+      promo: "Акция",
+      promosTitle: "Акциялар",
+      promoUntil: "{date} дейін",
+      promoSave: "Үнемдеу {sum}",
+      oldPrice: "Бұрынғы баға",
+      waTemplatePromo: "Сәлеметсіз бе! Акция бойынша мына қызметке жазылғым келеді: {name} ({price})."
     }
   },
 
@@ -223,6 +235,9 @@ const priceData = {
           illustration: "color-balayage",
           name: { ru: "Окрашивание балаяж", kk: "Балаяж бояуы" },
           price: { amount: 20000, from: true },
+          // Акция (необязательно): amount — новая цена, старая — price.amount; from и per берутся из price.
+          // Действует по дату until включительно (по company.timezone), потом сама выключается.
+          promo: { amount: 16000, until: "2026-10-31" },
           duration: 210,
           desc: {
             ru: "Мягкие светлые пряди, нанесённые вручную, — эффект волос, выгоревших на солнце. Добавляет объём и сияние.",
@@ -277,6 +292,7 @@ const priceData = {
           illustration: "nails-gel",
           name: { ru: "Маникюр с покрытием гель-лаком", kk: "Гель-лак жабынымен маникюр" },
           price: { amount: 4000 },
+          promo: { amount: 3200, until: "2026-10-31" },
           duration: 90,
           hit: true,
           desc: {
@@ -447,6 +463,7 @@ const priceData = {
           illustration: "lash-3d",
           name: { ru: "3D наращивание", kk: "3D кірпік ұзарту" },
           price: { amount: 9500 },
+          promo: { amount: 7900, until: "2026-10-31" },
           duration: 150,
           hit: true,
           desc: {
@@ -577,6 +594,7 @@ const priceData = {
           illustration: "makeup-evening",
           name: { ru: "Вечерний макияж", kk: "Кешкі макияж" },
           price: { amount: 7500 },
+          promo: { amount: 6000, until: "2026-10-31" },
           duration: 75,
           hit: true,
           desc: {

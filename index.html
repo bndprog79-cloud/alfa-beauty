@@ -276,7 +276,7 @@
   .section-title { font: 600 26px/1.2 var(--font-head); margin: 0 0 14px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .cat-card {
-    display: flex; flex-direction: column; text-decoration: none; background: var(--surface);
+    position: relative; display: flex; flex-direction: column; text-decoration: none; background: var(--surface);
     border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
     transition: transform .18s var(--ease);
   }
@@ -284,6 +284,32 @@
   .cat-card .body { padding: 10px 12px 14px; }
   .cat-card .name { font-weight: 600; font-size: 15px; line-height: 1.25; }
   .cat-card .count { color: var(--text-2); font-size: 13px; margin-top: 4px; }
+
+  /* Акции: пилюли «−20%» и «Акция», лента на главной, цены со старой зачёркнутой */
+  .promo-badge, .promo-tag {
+    display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--accent-strong); color: var(--on-accent);
+    font-size: 12px; font-weight: 600; line-height: 1.4; letter-spacing: .02em; white-space: nowrap;
+  }
+  .cat-card > .promo-tag, .promo-card > .promo-badge { position: absolute; top: 8px; left: 8px; }
+  .old { color: var(--text-2); font-weight: 400; text-decoration: line-through; }
+  .price .new, .price .old { display: block; }
+  .price .new { color: var(--accent-strong); }
+  .price .old { font-size: 13px; }
+  .promos { margin-bottom: 24px; }
+  .promo-strip {
+    display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory; scroll-padding: 0 16px; scrollbar-width: thin;
+    margin: 0 -16px; padding: 2px 16px 12px;
+  }
+  .promo-card {
+    position: relative; flex: 0 0 148px; scroll-snap-align: start; display: flex; flex-direction: column;
+    text-decoration: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow); transition: transform .18s var(--ease);
+  }
+  .promo-card:active { transform: scale(.97); }
+  .promo-card .body { flex: 1; display: flex; flex-direction: column; padding: 10px 12px 12px; }
+  .promo-card .name { font-weight: 600; font-size: 14px; line-height: 1.25; }
+  .promo-card .price { margin-top: auto; padding-top: 6px; font-weight: 600; font-size: 15px; }
 
   /* Подвал */
   .footer {
@@ -341,6 +367,11 @@
   .card-body { padding: 20px 20px 24px; }
   .card h1 { font: 600 26px/1.2 var(--font-head); }
   .price-big { font: 600 30px/1.2 var(--font-head); color: var(--accent-strong); margin-top: 10px; }
+  .price-promo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; margin-top: 10px; }
+  .price-promo .price-big { margin-top: 0; }
+  .price-promo .old { font-size: 18px; }
+  .promo-info { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; font-size: 15px; }
+  .promo-info .save { color: var(--accent-strong); font-weight: 600; }
   .card .meta { font-size: 15px; margin-top: 6px; }
   .card .dur .ico { width: 16px; height: 16px; }
   .card .desc { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
@@ -404,7 +435,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
-    .cat-card:active, .action:active .circle, .btn-book:active { transform: none; }
+    .cat-card:active, .promo-card:active, .action:active .circle, .btn-book:active { transform: none; }
   }
 
   /* Узкие экраны (320px) */
@@ -491,7 +522,13 @@ const priceData = {
       openInBrowser: "Открыть прайс в браузере",
       noscriptText: "Для просмотра прайса откройте его в браузере или позвоните нам.",
       waGreeting: "Здравствуйте! Хочу записаться в салон.",
-      waTemplate: "Здравствуйте! Хочу записаться на услугу: {name} ({price})."
+      waTemplate: "Здравствуйте! Хочу записаться на услугу: {name} ({price}).",
+      promo: "Акция",
+      promosTitle: "Акции",
+      promoUntil: "до {date}",
+      promoSave: "Выгода {sum}",
+      oldPrice: "Старая цена",
+      waTemplatePromo: "Здравствуйте! Хочу записаться на услугу по акции: {name} ({price})."
     },
     kk: {
       langLabel: "KZ",
@@ -522,7 +559,13 @@ const priceData = {
       openInBrowser: "Прайсты браузерде ашу",
       noscriptText: "Прайсты көру үшін оны браузерде ашыңыз немесе бізге қоңырау шалыңыз.",
       waGreeting: "Сәлеметсіз бе! Салонға жазылғым келеді.",
-      waTemplate: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name} ({price})."
+      waTemplate: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name} ({price}).",
+      promo: "Акция",
+      promosTitle: "Акциялар",
+      promoUntil: "{date} дейін",
+      promoSave: "Үнемдеу {sum}",
+      oldPrice: "Бұрынғы баға",
+      waTemplatePromo: "Сәлеметсіз бе! Акция бойынша мына қызметке жазылғым келеді: {name} ({price})."
     }
   },
 
@@ -655,6 +698,9 @@ const priceData = {
           illustration: "color-balayage",
           name: { ru: "Окрашивание балаяж", kk: "Балаяж бояуы" },
           price: { amount: 20000, from: true },
+          // Акция (необязательно): amount — новая цена, старая — price.amount; from и per берутся из price.
+          // Действует по дату until включительно (по company.timezone), потом сама выключается.
+          promo: { amount: 16000, until: "2026-10-31" },
           duration: 210,
           desc: {
             ru: "Мягкие светлые пряди, нанесённые вручную, — эффект волос, выгоревших на солнце. Добавляет объём и сияние.",
@@ -709,6 +755,7 @@ const priceData = {
           illustration: "nails-gel",
           name: { ru: "Маникюр с покрытием гель-лаком", kk: "Гель-лак жабынымен маникюр" },
           price: { amount: 4000 },
+          promo: { amount: 3200, until: "2026-10-31" },
           duration: 90,
           hit: true,
           desc: {
@@ -879,6 +926,7 @@ const priceData = {
           illustration: "lash-3d",
           name: { ru: "3D наращивание", kk: "3D кірпік ұзарту" },
           price: { amount: 9500 },
+          promo: { amount: 7900, until: "2026-10-31" },
           duration: 150,
           hit: true,
           desc: {
@@ -1009,6 +1057,7 @@ const priceData = {
           illustration: "makeup-evening",
           name: { ru: "Вечерний макияж", kk: "Кешкі макияж" },
           price: { amount: 7500 },
+          promo: { amount: 6000, until: "2026-10-31" },
           duration: 75,
           hit: true,
           desc: {
@@ -1184,6 +1233,7 @@ function fill(template, vars) {
 // ─────────── Форматирование ───────────
 const NBSP = ' '; // неразрывный пробел (кодом — редакторы не превратят в обычный)
 const CURRENCY = '₸';
+const MINUS = '−'; // знак минус для «−20%»
 
 function formatNumber(n) {
   return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, NBSP);
@@ -1216,13 +1266,20 @@ function pluralKey(n) {
 
 function formatCount(n) { return n + NBSP + t(pluralKey(n)); }
 
+// «от …» считается по ценам с учётом действующих акций
 function minAmount(cat) {
-  return Math.min.apply(null, cat.items.map(function (it) { return it.price.amount; }));
+  return Math.min.apply(null, cat.items.map(function (it) { return effectivePrice(it).amount; }));
 }
 
 function formatDate(iso) {
   const p = String(iso).split('-');
   return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : String(iso);
+}
+
+// ДД.ММ — для «Акция до 31.10»
+function formatDayMonth(iso) {
+  const p = String(iso).split('-');
+  return p.length === 3 ? p[2] + '.' + p[1] : String(iso);
 }
 
 // ─────────── Ссылки ───────────
@@ -1303,7 +1360,89 @@ function refreshStatus() {
 // Обновление раз в минуту, в начале каждой минуты
 function scheduleStatus() {
   refreshStatus();
+  refreshPromos();
   setTimeout(scheduleStatus, 60000 - Date.now() % 60000 + 50);
+}
+
+// ─────────── Акции ───────────
+// Акция действует, пока сегодняшняя дата салона (company.timezone) не позже promo.until.
+// Неверно заполненная акция (цена не меньше обычной, дата не ГГГГ-ММ-ДД) просто не показывается.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+let dateFormat; // undefined — ещё не создан, null — недоступен
+let promoDay = ''; // дата (ГГГГ-ММ-ДД), по которой нарисован экран
+
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+function salonToday(date) {
+  if (dateFormat === undefined) {
+    dateFormat = null;
+    if (company.timezone && typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+      try {
+        dateFormat = new Intl.DateTimeFormat('en-US', {
+          timeZone: company.timezone, year: 'numeric', month: '2-digit', day: '2-digit'
+        });
+        if (!dateFormat.formatToParts) dateFormat = null;
+      } catch (e) { dateFormat = null; }
+    }
+  }
+  if (dateFormat) {
+    try {
+      const p = {};
+      dateFormat.formatToParts(date).forEach(function (x) { p[x.type] = x.value; });
+      const iso = p.year + '-' + p.month + '-' + p.day;
+      if (ISO_DATE.test(iso)) return iso;
+    } catch (e) { /* ниже — дата устройства */ }
+  }
+  return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
+}
+
+// Действующая акция услуги или null
+function activePromo(item) {
+  const p = item.promo;
+  if (!p || typeof p.amount !== 'number' || !(p.amount >= 0) || !(p.amount < item.price.amount)) return null;
+  if (!ISO_DATE.test(String(p.until)) || promoDay > p.until) return null;
+  return p;
+}
+
+// Цена с учётом акции: from и per — от обычной цены
+function effectivePrice(item) {
+  const p = activePromo(item);
+  return p ? { amount: p.amount, from: item.price.from, per: item.price.per } : item.price;
+}
+
+function discountPercent(item, p) {
+  return Math.round((item.price.amount - p.amount) / item.price.amount * 100);
+}
+
+function formatSaving(item, p) {
+  let s = formatAmount(item.price.amount - p.amount);
+  if (item.price.per) s += t('perPrefix') + loc(item.price.per);
+  return s;
+}
+
+// Все действующие акции по порядку прайса
+function activePromos() {
+  const list = [];
+  priceData.categories.forEach(function (cat) {
+    cat.items.forEach(function (item) {
+      const p = activePromo(item);
+      if (p) list.push({ cat: cat, item: item, promo: p });
+    });
+  });
+  return list;
+}
+
+function promoKey() {
+  return activePromos().map(function (r) { return r.item.id; }).join(',');
+}
+
+// Наступил новый день и какая-то акция закончилась — перерисовать экран на месте
+function refreshPromos() {
+  const day = salonToday(new Date());
+  if (day === promoDay) return;
+  const before = promoKey();
+  promoDay = day;
+  if (currentRoute && promoKey() !== before) redraw();
 }
 
 // ─────────── Поиск ───────────
@@ -1404,8 +1543,29 @@ function ornament() {
   return o;
 }
 
+function discountBadge(item, p) {
+  return el('span', 'promo-badge num', MINUS + discountPercent(item, p) + '%');
+}
+
+// Зачёркнутая старая цена (только сумма: «от» и « / ноготь» есть у новой цены рядом)
+function oldPrice(item) {
+  const text = formatAmount(item.price.amount);
+  const del = el('del', 'old num', text);
+  del.setAttribute('aria-label', t('oldPrice') + ' ' + text);
+  return del;
+}
+
+// Новая цена и под ней старая
+function promoPrice(item, className) {
+  const box = el('div', className);
+  box.appendChild(el('span', 'new', formatPrice(effectivePrice(item))));
+  box.appendChild(oldPrice(item));
+  return box;
+}
+
 // Строка услуги: в списке категории — длительность и «Хит», в поиске — название категории
 function serviceRow(cat, item, withCategory) {
+  const promo = activePromo(item);
   const row = el('a', 'row');
   row.href = itemHash(cat, item);
   row.appendChild(illustration(item.illustration, 'ill-mini'));
@@ -1413,16 +1573,45 @@ function serviceRow(cat, item, withCategory) {
   info.appendChild(el('div', 'name', loc(item.name)));
   if (withCategory) {
     info.appendChild(el('div', 'cat', loc(cat.name)));
-  } else if (item.duration || item.hit) {
+    if (promo) {
+      const meta = el('div', 'meta');
+      meta.appendChild(discountBadge(item, promo));
+      info.appendChild(meta);
+    }
+  } else if (item.duration || item.hit || promo) {
     const meta = el('div', 'meta');
     if (item.duration) meta.appendChild(durationLabel(item.duration));
     if (item.hit) meta.appendChild(hitBadge());
+    if (promo) meta.appendChild(discountBadge(item, promo));
     info.appendChild(meta);
   }
   row.appendChild(info);
-  row.appendChild(el('div', 'price num', formatPrice(item.price)));
+  if (promo) row.appendChild(promoPrice(item, 'price num is-promo'));
+  else row.appendChild(el('div', 'price num', formatPrice(item.price)));
   row.appendChild(svgNode(ICONS.chev));
   return row;
+}
+
+// Лента акций на главной (null, если действующих акций нет)
+function promoStrip() {
+  const promos = activePromos();
+  if (!promos.length) return null;
+  const section = el('section', 'promos');
+  section.appendChild(el('h2', 'section-title', t('promosTitle')));
+  const strip = el('div', 'promo-strip');
+  promos.forEach(function (r, i) {
+    const card = stagger(el('a', 'promo-card'), i);
+    card.href = itemHash(r.cat, r.item);
+    card.appendChild(illustration(r.item.illustration, 'ill-tile'));
+    card.appendChild(discountBadge(r.item, r.promo));
+    const body = el('div', 'body');
+    body.appendChild(el('div', 'name', loc(r.item.name)));
+    body.appendChild(promoPrice(r.item, 'price num'));
+    card.appendChild(body);
+    strip.appendChild(card);
+  });
+  section.appendChild(strip);
+  return section;
 }
 
 // Перерисовывает только результаты, поле ввода не трогает (фокус и клавиатура остаются)
@@ -1548,12 +1737,15 @@ function renderHome(screen) {
     input.focus();
   });
 
+  const promos = promoStrip();
+  if (promos) browse.appendChild(promos);
   browse.appendChild(el('h2', 'section-title', t('categories')));
   const grid = el('div', 'grid');
   priceData.categories.forEach(function (cat, i) {
     const card = stagger(el('a', 'cat-card'), i);
     card.href = catHash(cat);
     card.appendChild(illustration(cat.illustration, 'ill-tile'));
+    if (cat.items.some(activePromo)) card.appendChild(el('span', 'promo-tag', t('promo')));
     const body = el('div', 'body');
     body.appendChild(el('div', 'name', loc(cat.name)));
     body.appendChild(el('div', 'count', formatCount(cat.items.length)));
@@ -1607,7 +1799,19 @@ function renderItem(screen, cat, item, app) {
   card.appendChild(illustration(item.illustration, 'ill-hero draw'));
   const body = el('div', 'card-body');
   body.appendChild(el('h1', null, loc(item.name)));
-  body.appendChild(el('p', 'price-big num', formatPrice(item.price)));
+  const promo = activePromo(item);
+  if (promo) {
+    const prices = el('div', 'price-promo');
+    prices.appendChild(el('p', 'price-big num', formatPrice(effectivePrice(item))));
+    prices.appendChild(oldPrice(item));
+    body.appendChild(prices);
+    const info = el('p', 'promo-info');
+    info.appendChild(el('span', 'promo-tag num', t('promo') + ' ' + fill(t('promoUntil'), { date: formatDayMonth(promo.until) })));
+    info.appendChild(el('span', 'save num', fill(t('promoSave'), { sum: formatSaving(item, promo) })));
+    body.appendChild(info);
+  } else {
+    body.appendChild(el('p', 'price-big num', formatPrice(item.price)));
+  }
   if (item.duration || item.hit) {
     const meta = el('p', 'meta');
     if (item.duration) meta.appendChild(durationLabel(item.duration));
@@ -1627,9 +1831,9 @@ function renderItem(screen, cat, item, app) {
 
   // Кнопка записи — вне анимируемого экрана, чтобы transform её не сдвигал
   const bar = el('div', 'book-bar');
-  const book = externalLink('btn-book', waLink(fill(t('waTemplate'), {
+  const book = externalLink('btn-book', waLink(fill(t(promo ? 'waTemplatePromo' : 'waTemplate'), {
     name: loc(item.name),
-    price: formatPrice(item.price)
+    price: formatPrice(effectivePrice(item))
   })));
   book.appendChild(svgNode(ICONS.whatsapp));
   book.appendChild(el('span', null, t('book')));
@@ -1726,15 +1930,25 @@ function onRoute() {
   window.scrollTo(0, isBack ? (scrollPositions[idx] || 0) : 0);
 }
 
+// Перерисовать текущий экран на месте: без анимации, прокрутка сохраняется
+function redraw() {
+  const y = window.pageYOffset;
+  const inSearch = document.activeElement && document.activeElement.type === 'search';
+  render(currentRoute, null);
+  window.scrollTo(0, y);
+  if (inSearch) {
+    const input = document.querySelector('.search input');
+    if (input) input.focus({ preventScroll: true });
+  }
+}
+
 function setLang(code) {
   if (code === lang) return;
   lang = code;
   saveLang(code);
   document.documentElement.lang = code;
-  const y = window.pageYOffset;
   const hadFocus = document.activeElement && document.activeElement.closest && document.activeElement.closest('.lang');
-  render(currentRoute, null);
-  window.scrollTo(0, y);
+  redraw();
   if (hadFocus) {
     const btn = document.querySelector('.lang button[lang="' + code + '"]');
     if (btn) btn.focus({ preventScroll: true });
@@ -1771,11 +1985,15 @@ function init() {
     scrollPositions[currentIdx] = window.pageYOffset;
   }, { passive: true });
   window.addEventListener('hashchange', onRoute);
+  promoDay = salonToday(new Date());
   onRoute();
   scheduleStatus();
-  // Телефон мог «спать» — при возврате на вкладку сразу обновить статус
+  // Телефон мог «спать» — при возврате на вкладку сразу обновить статус и акции
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) refreshStatus();
+    if (!document.hidden) {
+      refreshStatus();
+      refreshPromos();
+    }
   });
 }
 
