@@ -11,7 +11,7 @@
  */
 'use strict';
 
-const CACHE_VERSION = '28414d444d';
+const CACHE_VERSION = '723cee9066';
 const CACHE_PREFIX = 'alfa-beauty-';
 const CACHE = CACHE_PREFIX + CACHE_VERSION;
 const PAGE = './';
