@@ -16,7 +16,7 @@
  *  4. sw.js: CACHE_VERSION = хеш index.html, manifest и иконок. Изменился любой файл →
  *     новая версия кэша, у клиентов старый кэш удалится.
  *  5. og-image.png (1200×630) — картинка для превью ссылки в WhatsApp и Telegram: логотип, название,
- *     тексты meta.share, рисунки hair-base / nails-base / lashes-base в цветах темы (тоже Edge headless).
+ *     meta.share.tagline и строки meta.share.heading (крупно — в WhatsApp картинка уменьшается ~в 4 раза), рисунки hair-base / nails-base / lashes-base в цветах темы (тоже Edge headless).
  *     Важное — в центральном квадрате 630×630 (мессенджер может обрезать края). Если файл больше
  *     300 КБ — палитра уменьшается через ffmpeg.
  *     В index.html между метками <!--OG:START--> … <!--OG:END--> — теги Open Graph и description;
@@ -43,7 +43,7 @@ const OG_IMAGE = path.join(ROOT, 'og-image.png');
 const OG_W = 1200;
 const OG_H = 630;
 const OG_MAX_BYTES = 300 * 1024;
-const OG_ILLS = { left: ['hair-base', 'nails-base'], right: ['lashes-base'] };
+const OG_ILLS = { left: ['hair-base', 'nails-base'], right: ['lashes-base'] }; // слева два, справа один
 
 const SHORT_NAME = 'Alfa Beauty'; // docs/TZ.md, раздел 9
 
@@ -211,44 +211,52 @@ function illustrations(html) {
 
 function ogPage(data, html, theme) {
   const share = data.meta.share;
+  // heading — массив строк; строку (старый формат) делим по « · »
+  const heading = Array.isArray(share.heading) ? share.heading : String(share.heading).split(' · ');
   const ill = illustrations(html);
-  const side = keys => keys.map(k => {
+  const art = (k, cls) => {
     if (!ill[k]) throw new Error('В ILLUSTRATIONS нет рисунка ' + k);
-    return '<div class="ill">' + ill[k] + '</div>';
-  }).join('');
+    return '<div class="ill ' + cls + '">' + ill[k] + '</div>';
+  };
   const style = html.match(/<style>[\s\S]*?<\/style>/)[0];
+  const sans = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
   return '<!DOCTYPE html><html data-theme="' + esc(theme) + '"><head><meta charset="utf-8">' + style +
     '<style>' +
     'html,body{margin:0;overflow:hidden;background:var(--bg)}' +
     '.og{position:relative;width:' + OG_W + 'px;height:' + OG_H + 'px;background:var(--bg);color:var(--text);overflow:hidden}' +
-    '.frame{position:absolute;inset:22px;border:1px solid var(--gold);opacity:.7;border-radius:28px}' +
-    '.side{position:absolute;top:0;bottom:0;width:300px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px}' +
-    '.side.l{left:6px}.side.r{right:6px}' +
-    '.side .ill{width:280px;height:196px;--sw:1.3;background:none;border-radius:0}' +
-    '.side.r .ill{width:330px;height:231px}' +
+    '.frame{position:absolute;inset:10px;border:1px solid var(--gold);opacity:.7;border-radius:24px}' +
+    // Рисунки по бокам, за пределами центрального квадрата (видимая часть рисунка — середина viewBox)
+    '.og .ill{position:absolute;--sw:1.3;background:none;border-radius:0;transform:translate(-50%,-50%)}' +
+    '.a1{left:150px;top:162px;width:410px;height:287px}' +
+    '.a2{left:150px;top:468px;width:410px;height:287px}' +
+    '.a3{left:1046px;top:315px;width:410px;height:287px}' +
     '.mid{position:absolute;left:' + (OG_W - OG_H) / 2 + 'px;top:0;width:' + OG_H + 'px;height:' + OG_H + 'px;' +
-      'display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}' +
-    '.mid .mono{width:132px;height:132px}' +
-    '.name{font:600 64px/1.1 var(--font-head);margin-top:10px;white-space:nowrap}' +
-    '.tag{color:var(--text-2);font:600 20px/1.3 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.16em;text-transform:uppercase;margin-top:12px;white-space:nowrap}' +
-    '.mid .ornament{width:320px;max-width:none;margin:24px auto 22px}' +
-    '.head{font:600 50px/1.15 var(--font-head);color:var(--accent-strong);white-space:nowrap}' +
-    '.cta{color:var(--text-2);font:500 22px/1.3 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin-top:14px;white-space:nowrap}' +
+      'display:flex;align-items:center;justify-content:center;text-align:center}' +
+    '.stack{display:flex;flex-direction:column;align-items:center}' +
+    '.mid .mono{width:195px;height:195px}' +
+    '.name{font:600 112px/1.02 var(--font-head);margin-top:2px;white-space:nowrap}' +
+    '.tag{color:var(--text-2);font:600 30px/1.3 ' + sans + ';letter-spacing:.14em;text-transform:uppercase;margin-top:8px;white-space:nowrap}' +
+    '.mid .ornament{width:360px;max-width:none;margin:16px auto 12px}' +
+    '.head{font:600 76px/1.08 var(--font-head);color:var(--accent-strong);white-space:nowrap}' +
     '</style></head><body><div class="og">' +
     '<div class="frame"></div>' +
-    '<div class="side l">' + side(OG_ILLS.left) + '</div>' +
-    '<div class="side r">' + side(OG_ILLS.right) + '</div>' +
-    '<div class="mid">' +
+    art(OG_ILLS.left[0], 'a1') + art(OG_ILLS.left[1], 'a2') + art(OG_ILLS.right[0], 'a3') +
+    '<div class="mid"><div class="stack">' +
       '<div class="mono">' + logoSvg(html) + '</div>' +
       '<div class="name fit">' + esc(data.company.name) + '</div>' +
       '<div class="tag fit">' + esc(share.tagline) + '</div>' +
       '<div class="ornament"><span></span></div>' +
-      '<div class="head fit">' + esc(share.heading) + '</div>' +
-      '<div class="cta fit">' + esc(share.cta) + '</div>' +
-    '</div></div>' +
-    // Длинный текст (другой салон) уменьшается, чтобы не выйти из центрального квадрата
-    '<script>document.querySelectorAll(".fit").forEach(function(el){var s=parseFloat(getComputedStyle(el).fontSize);' +
-    'while(el.scrollWidth>' + (OG_H - 70) + '&&s>12){s-=1;el.style.fontSize=s+"px";}});</script>' +
+      heading.map(h => '<div class="head fit">' + esc(h) + '</div>').join('') +
+    '</div></div></div>' +
+    // Длинный текст (другой салон) уменьшается: по ширине — до 590 px, по высоте — весь блок в квадрат.
+    // Только после загрузки шрифта заголовков (запасной шрифт шире — иначе название зря уменьшится)
+    '<script>var nf=getComputedStyle(document.querySelector(".name"));' +
+    'document.fonts.load(nf.fontWeight+" 100px "+nf.fontFamily,"AБә").catch(function(){}).then(function(){function fs(el){return parseFloat(getComputedStyle(el).fontSize);}' +
+    'document.querySelectorAll(".fit").forEach(function(el){var s=fs(el);' +
+    'while(el.scrollWidth>' + (OG_H - 40) + '&&s>12){s-=1;el.style.fontSize=s+"px";}});' +
+    'var st=document.querySelector(".stack"),big=document.querySelectorAll(".name,.head"),n=0;' +
+    'while(st.offsetHeight>' + (OG_H - 30) + '&&n++<200){big.forEach(function(el){el.style.fontSize=Math.max(12,fs(el)-1)+"px";});}' +
+    '});</script>' +
     '</body></html>';
 }
 
