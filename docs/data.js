@@ -8,7 +8,16 @@ const priceData = {
     updatedAt: "2026-10-01",      // дата «Цены актуальны на»
     theme: "nude",                // nude | noir | sage
     defaultLang: "ru",            // ru | kk
-    siteUrl: "https://bndprog79-cloud.github.io/alfa-beauty/"
+    siteUrl: "https://bndprog79-cloud.github.io/alfa-beauty/",
+    // Превью ссылки в мессенджерах (Open Graph) и картинка og-image.png — собирает tools/pwa/build-pwa.js
+    share: {
+      title: "Alfa Beauty-Lab — прайс-лист",
+      description: "Салон красоты в Алматы. Цены, акции и запись через WhatsApp",
+      tagline: "Салон красоты · Алматы",    // подзаголовок на картинке
+      heading: "Прайс-лист · Баға тізімі",  // крупная надпись на картинке
+      cta: "Цены · Запись онлайн",          // короткий призыв на картинке
+      locale: "ru_RU"
+    }
   },
 
   company: {
