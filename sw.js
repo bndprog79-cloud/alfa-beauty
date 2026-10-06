@@ -6,12 +6,12 @@
  * Так после изменения цен клиент с интернетом сразу видит новые цены, а без интернета прайс всё равно открывается.
  * Manifest и иконки — «сначала кэш».
  *
- * CACHE_VERSION проставляет tools/pwa/build-pwa.js (хеш файлов сайта) — вручную не менять.
+ * CACHE_VERSION проставляет сборка tools/build.js (хеш входных данных: данные, настройки, движок, картинки) — вручную не менять.
  * Новая версия → браузер ставит новый service worker, старый кэш удаляется.
  */
 'use strict';
 
-const CACHE_VERSION = '8e1b79135c';
+const CACHE_VERSION = '0d912a760e';
 const CACHE_PREFIX = 'alfa-beauty-';
 const CACHE = CACHE_PREFIX + CACHE_VERSION;
 const PAGE = './';
