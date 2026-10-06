@@ -21,6 +21,9 @@
  *     300 КБ — палитра уменьшается через ffmpeg.
  *     В index.html между метками <!--OG:START--> … <!--OG:END--> — теги Open Graph и description;
  *     адрес картинки абсолютный (meta.siteUrl) с ?v=<хеш картинки>, чтобы мессенджеры брали новую версию.
+ *  0. Первым шагом — tools/qr/build-qr.js: QR-код (qr/*.svg, окно QR в index.html) и карточка для печати
+ *     print/card-a6.pdf / .png. QR должен попасть в index.html до подсчёта версии кэша.
+ *     Нужны пакеты из tools/ (первый раз: cd tools; npm install; cd ..).
  */
 'use strict';
 
@@ -31,9 +34,8 @@ const vm = require('vm');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 
-const ROOT = path.resolve(__dirname, '..', '..');
-const INDEX = path.join(ROOT, 'index.html');
-const DATA = path.join(ROOT, 'docs', 'data.js');
+const { ROOT, INDEX, loadData, themeVar, logoSvg, esc, findEdge, pngSize } = require('../common');
+const { buildQr } = require('../qr/build-qr');
 const ICONS = path.join(ROOT, 'icons');
 const MANIFEST = path.join(ROOT, 'manifest.webmanifest');
 const SW = path.join(ROOT, 'sw.js');
@@ -55,33 +57,6 @@ const ICON_SET = [
   { file: 'icon-maskable-512.png', size: 512, logo: 0.74 },
   { file: 'apple-touch-icon.png', size: 180, logo: 0.84 }
 ];
-
-// ─────────── Данные и тема ───────────
-function loadData() {
-  const code = fs.readFileSync(DATA, 'utf8');
-  return vm.runInNewContext(code + '\n;priceData');
-}
-
-// Значение CSS-переменной темы из <style> index.html (nude — блок :root, остальные — :root[data-theme="…"])
-function themeVar(html, theme, name) {
-  const head = theme === 'nude' ? ':root {' : ':root[data-theme="' + theme + '"] {';
-  const start = html.indexOf(head);
-  if (start === -1) throw new Error('В index.html нет темы «' + theme + '»');
-  const block = html.slice(start, html.indexOf('}', start));
-  const m = block.match(new RegExp('\\s' + name + ':\\s*([^;]+);'));
-  if (!m) throw new Error('В теме «' + theme + '» нет переменной ' + name);
-  return m[1].trim();
-}
-
-function logoSvg(html) {
-  const m = html.match(/'logo':\s*'([^']+)'/);
-  if (!m) throw new Error('В index.html не найден ILLUSTRATIONS.logo');
-  return m[1];
-}
-
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
 
 // ─────────── 1. index.html: тема и noscript ───────────
 function noscriptBlock(data, html) {
@@ -116,22 +91,6 @@ function updateIndex(data, theme, bg) {
 }
 
 // ─────────── 2. Иконки (Edge headless) ───────────
-function findEdge() {
-  const list = [
-    process.env.EDGE_PATH,
-    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
-  ];
-  const found = list.find(p => p && fs.existsSync(p));
-  if (!found) throw new Error('Не найден Microsoft Edge (msedge.exe). Укажите путь в переменной EDGE_PATH.');
-  return found;
-}
-
-function pngSize(file) {
-  const b = fs.readFileSync(file);
-  return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
-}
-
 function buildIcons(html, theme) {
   const style = html.match(/<style>[\s\S]*?<\/style>/)[0];
   const logo = logoSvg(html);
@@ -325,7 +284,8 @@ function updateOgTags(data, imageHash) {
   return image;
 }
 
-function main() {
+async function main() {
+  await buildQr();
   const data = loadData();
   const theme = data.meta.theme || 'nude';
   const src = fs.readFileSync(INDEX, 'utf8');
@@ -343,4 +303,4 @@ function main() {
   console.log('sw.js: CACHE_VERSION = ' + updateSwVersion());
 }
 
-main();
+main().catch(e => { console.error(e.message); process.exit(1); });

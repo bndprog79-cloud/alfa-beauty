@@ -57,6 +57,9 @@
     --wa: #25D366;
     --ok: #2E7D4F;
     --hit-text: #8E5257; /* чуть темнее --accent-strong: контраст AA на --surface-2 */
+    --qr-dark: #3A2A24;  /* QR: всегда тёмные модули на светлом (инверсный QR читают не все камеры) */
+    --qr-light: #FFFFFF;
+    --scrim: rgba(58,42,36,.55); /* затемнение под окном */
     --shadow: 0 6px 24px rgba(58,42,36,.06);
     --press: rgba(58,42,36,.04);
     --radius: 20px;
@@ -92,6 +95,9 @@
     --ill-line: #FFF0E0;
     --ok: #7FCB98;
     --hit-text: #E8CFA5;
+    --qr-dark: #121011;
+    --qr-light: #F3ECE6;
+    --scrim: rgba(0,0,0,.72);
     --shadow: 0 6px 24px rgba(0,0,0,.08);
     --press: rgba(243,236,230,.05);
     color-scheme: dark;
@@ -122,6 +128,9 @@
     --ill-line: #355640;
     --ok: #2E7044;
     --hit-text: #526A4F;
+    --qr-dark: #26302A;
+    --qr-light: #FFFFFF;
+    --scrim: rgba(38,48,42,.55);
     --shadow: 0 6px 24px rgba(38,48,42,.06);
     --press: rgba(38,48,42,.04);
   }
@@ -219,7 +228,15 @@
   .draw .ilr { animation: fadeIn .8s var(--ease) backwards; }
 
   /* ─────────── Главная: шапка ─────────── */
-  .topbar { display: flex; justify-content: flex-end; padding-top: 8px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 8px; }
+  .tools { display: flex; gap: 8px; }
+  .icon-btn {
+    flex: none; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; background: var(--surface); color: var(--accent-strong);
+    cursor: pointer; transition: transform .2s var(--ease), background-color .2s var(--ease);
+  }
+  .icon-btn .ico { width: 22px; height: 22px; }
+  .icon-btn:active { transform: scale(.94); background: var(--surface-2); }
   .lang {
     display: inline-flex; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface);
   }
@@ -433,7 +450,37 @@
   .opt input:checked::before { transform: scale(1); }
   .opt .vname { flex: 1; min-width: 0; }
   .opt .vprice { font-weight: 600; white-space: nowrap; }
-  .screen-item { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .screen-item { position: relative; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .screen-item .back { max-width: calc(100% - 52px); }
+  .screen-item > .share-item { position: absolute; top: 8px; right: 0; }
+  /* Уведомление «Ссылка скопирована» */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 30;
+    max-width: calc(100% - 32px); padding: 10px 18px; border-radius: 999px; background: var(--text); color: var(--bg);
+    font-size: 15px; font-weight: 600; text-align: center; box-shadow: var(--shadow); pointer-events: none;
+    opacity: 0; transform: translate(-50%, 8px); transition: opacity .2s var(--ease), transform .2s var(--ease);
+  }
+  .toast.is-above-bar { bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .toast.is-shown { opacity: 1; transform: translate(-50%, 0); }
+  /* Окно «QR-код» */
+  .qr-modal {
+    position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
+    padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    background: var(--scrim); animation: fadeIn .2s var(--ease) backwards;
+  }
+  .qr-dialog {
+    display: flex; flex-direction: column; align-items: center; max-height: 100%; overflow-y: auto;
+    padding: 6px 16px 20px; border-radius: var(--radius); background: var(--qr-light); color: var(--qr-dark);
+    text-align: center; box-shadow: var(--shadow);
+  }
+  .qr-dialog .qr-close { align-self: flex-end; margin-right: -8px; border-color: transparent; background: transparent; color: var(--qr-dark); }
+  .qr-dialog .qr-close:focus-visible { outline-color: var(--qr-dark); outline-offset: -4px; }
+  .qr-box { width: min(80vw, 420px, calc(100vh - 170px)); min-width: 160px; aspect-ratio: 1; }
+  .qr-box .qr { display: block; width: 100%; height: 100%; }
+  .qr-bg { fill: var(--qr-light); }
+  .qr-m { fill: var(--qr-dark); }
+  .qr-name { font: 600 26px/1.2 var(--font-head); font-variant-numeric: lining-nums; margin-top: 6px; }
+  .qr-hint { font-size: 15px; margin-top: 4px; }
 
   /* Кнопка записи — закреплена внизу окна, вне анимируемого экрана */
   .book-bar {
@@ -483,7 +530,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
-    .cat-card:active, .promo-card:active, .action:active .circle, .btn-book:active { transform: none; }
+    .cat-card:active, .promo-card:active, .action:active .circle, .btn-book:active, .icon-btn:active { transform: none; }
   }
 
   /* Узкие экраны (320px) */
@@ -588,7 +635,13 @@ const priceData = {
       waTemplatePromo: "Здравствуйте! Хочу записаться на услугу по акции: {name} ({price}).",
       variantsTitle: "Стоимость",
       chooseVariant: "Выберите вариант",
-      waTemplateVariant: "Здравствуйте! Хочу записаться на услугу: {name}, {variant} ({price})."
+      waTemplateVariant: "Здравствуйте! Хочу записаться на услугу: {name}, {variant} ({price}).",
+      share: "Поделиться",
+      shareText: "Прайс-лист салона {name}",
+      linkCopied: "Ссылка скопирована",
+      showQr: "QR-код",
+      qrHint: "Наведите камеру телефона",
+      close: "Закрыть"
     },
     kk: {
       langLabel: "KZ",
@@ -628,7 +681,13 @@ const priceData = {
       waTemplatePromo: "Сәлеметсіз бе! Акция бойынша мына қызметке жазылғым келеді: {name} ({price}).",
       variantsTitle: "Құны",
       chooseVariant: "Нұсқаны таңдаңыз",
-      waTemplateVariant: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name}, {variant} ({price})."
+      waTemplateVariant: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name}, {variant} ({price}).",
+      share: "Бөлісу",
+      shareText: "{name} салонының баға тізімі",
+      linkCopied: "Сілтеме көшірілді",
+      showQr: "QR-код",
+      qrHint: "Телефон камерасын бағыттаңыз",
+      close: "Жабу"
     }
   },
 
@@ -1278,8 +1337,16 @@ const ICONS = {
   back: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14.5 6l-6 6 6 6"/></svg>',
   chev: '<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.5 6l6 6-6 6"/></svg>',
   search: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.8" cy="10.8" r="6.3"/><path d="M15.4 15.4l4.6 4.6"/></svg>',
-  close: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7l10 10M17 7L7 17"/></svg>'
+  close: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7l10 10M17 7L7 17"/></svg>',
+  share: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15V3.5M8 7.5l4-4 4 4"/><path d="M8.5 10.5H6v10h12v-10h-2.5"/></svg>',
+  qr: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM14 20h.01M20 14h.01"/></svg>'
 };
+
+// QR-код со ссылкой на сайт (?src=qr) для окна «QR-код»
+/*QR:START*/
+// https://bndprog79-cloud.github.io/alfa-beauty/?src=qr — собирает tools/qr/build-qr.js, руками не править
+const QR_SVG = '<svg class="qr" viewBox="0 0 41 41" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><rect class="qr-bg" width="41" height="41"/><path class="qr-m" d="M4 4h7v1h-7zM12 4h1v1h-1zM14 4h7v1h-7zM25 4h1v1h-1zM27 4h1v1h-1zM30 4h7v1h-7zM4 5h1v1h-1zM10 5h1v1h-1zM15 5h4v1h-4zM20 5h4v1h-4zM28 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM4 6h1v1h-1zM6 6h3v1h-3zM10 6h1v1h-1zM13 6h2v1h-2zM16 6h1v1h-1zM18 6h2v1h-2zM21 6h1v1h-1zM23 6h3v1h-3zM30 6h1v1h-1zM32 6h3v1h-3zM36 6h1v1h-1zM4 7h1v1h-1zM6 7h3v1h-3zM10 7h1v1h-1zM12 7h2v1h-2zM19 7h3v1h-3zM23 7h2v1h-2zM26 7h3v1h-3zM30 7h1v1h-1zM32 7h3v1h-3zM36 7h1v1h-1zM4 8h1v1h-1zM6 8h3v1h-3zM10 8h1v1h-1zM12 8h3v1h-3zM17 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM25 8h1v1h-1zM27 8h1v1h-1zM30 8h1v1h-1zM32 8h3v1h-3zM36 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM12 9h5v1h-5zM18 9h2v1h-2zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM30 9h1v1h-1zM36 9h1v1h-1zM4 10h7v1h-7zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h7v1h-7zM12 11h4v1h-4zM21 11h2v1h-2zM25 11h1v1h-1zM27 11h2v1h-2zM4 12h1v1h-1zM8 12h1v1h-1zM10 12h3v1h-3zM14 12h1v1h-1zM18 12h4v1h-4zM23 12h4v1h-4zM29 12h5v1h-5zM36 12h1v1h-1zM4 13h1v1h-1zM6 13h3v1h-3zM11 13h2v1h-2zM15 13h2v1h-2zM18 13h5v1h-5zM25 13h1v1h-1zM27 13h1v1h-1zM29 13h1v1h-1zM33 13h3v1h-3zM5 14h1v1h-1zM8 14h3v1h-3zM13 14h1v1h-1zM16 14h5v1h-5zM22 14h1v1h-1zM27 14h1v1h-1zM29 14h2v1h-2zM33 14h1v1h-1zM4 15h2v1h-2zM7 15h1v1h-1zM11 15h3v1h-3zM15 15h3v1h-3zM19 15h2v1h-2zM24 15h2v1h-2zM27 15h1v1h-1zM29 15h1v1h-1zM35 15h2v1h-2zM4 16h1v1h-1zM6 16h1v1h-1zM9 16h2v1h-2zM13 16h2v1h-2zM17 16h1v1h-1zM19 16h2v1h-2zM25 16h1v1h-1zM30 16h1v1h-1zM32 16h2v1h-2zM4 17h3v1h-3zM9 17h1v1h-1zM11 17h1v1h-1zM14 17h1v1h-1zM16 17h1v1h-1zM18 17h1v1h-1zM22 17h1v1h-1zM26 17h2v1h-2zM29 17h1v1h-1zM33 17h1v1h-1zM5 18h1v1h-1zM9 18h2v1h-2zM15 18h2v1h-2zM18 18h2v1h-2zM21 18h2v1h-2zM24 18h1v1h-1zM27 18h4v1h-4zM32 18h1v1h-1zM34 18h2v1h-2zM4 19h2v1h-2zM7 19h1v1h-1zM9 19h1v1h-1zM12 19h1v1h-1zM14 19h2v1h-2zM17 19h5v1h-5zM24 19h2v1h-2zM27 19h6v1h-6zM5 20h1v1h-1zM7 20h2v1h-2zM10 20h1v1h-1zM12 20h2v1h-2zM17 20h2v1h-2zM21 20h2v1h-2zM24 20h2v1h-2zM30 20h1v1h-1zM32 20h1v1h-1zM35 20h1v1h-1zM5 21h2v1h-2zM9 21h1v1h-1zM11 21h3v1h-3zM16 21h1v1h-1zM18 21h3v1h-3zM22 21h1v1h-1zM25 21h3v1h-3zM29 21h1v1h-1zM33 21h3v1h-3zM5 22h4v1h-4zM10 22h1v1h-1zM16 22h6v1h-6zM24 22h1v1h-1zM27 22h1v1h-1zM31 22h1v1h-1zM33 22h1v1h-1zM35 22h1v1h-1zM5 23h4v1h-4zM12 23h1v1h-1zM14 23h1v1h-1zM16 23h4v1h-4zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h2v1h-2zM35 23h1v1h-1zM4 24h1v1h-1zM7 24h1v1h-1zM9 24h2v1h-2zM12 24h1v1h-1zM14 24h3v1h-3zM22 24h2v1h-2zM25 24h2v1h-2zM30 24h1v1h-1zM32 24h2v1h-2zM35 24h1v1h-1zM4 25h1v1h-1zM6 25h4v1h-4zM11 25h4v1h-4zM17 25h1v1h-1zM20 25h2v1h-2zM24 25h1v1h-1zM26 25h2v1h-2zM29 25h1v1h-1zM31 25h1v1h-1zM34 25h2v1h-2zM6 26h1v1h-1zM9 26h5v1h-5zM15 26h2v1h-2zM18 26h1v1h-1zM20 26h1v1h-1zM22 26h1v1h-1zM24 26h1v1h-1zM27 26h2v1h-2zM31 26h1v1h-1zM35 26h1v1h-1zM6 27h3v1h-3zM11 27h1v1h-1zM14 27h1v1h-1zM16 27h1v1h-1zM21 27h1v1h-1zM23 27h1v1h-1zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h1v1h-1zM35 27h1v1h-1zM4 28h2v1h-2zM7 28h1v1h-1zM9 28h5v1h-5zM19 28h3v1h-3zM23 28h3v1h-3zM28 28h5v1h-5zM36 28h1v1h-1zM12 29h4v1h-4zM18 29h5v1h-5zM26 29h1v1h-1zM28 29h1v1h-1zM32 29h1v1h-1zM34 29h2v1h-2zM4 30h7v1h-7zM12 30h1v1h-1zM16 30h2v1h-2zM19 30h1v1h-1zM22 30h1v1h-1zM24 30h1v1h-1zM26 30h1v1h-1zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h2v1h-2zM35 30h1v1h-1zM4 31h1v1h-1zM10 31h1v1h-1zM13 31h2v1h-2zM17 31h1v1h-1zM19 31h2v1h-2zM24 31h2v1h-2zM28 31h1v1h-1zM32 31h1v1h-1zM36 31h1v1h-1zM4 32h1v1h-1zM6 32h3v1h-3zM10 32h1v1h-1zM12 32h3v1h-3zM16 32h5v1h-5zM24 32h3v1h-3zM28 32h6v1h-6zM4 33h1v1h-1zM6 33h3v1h-3zM10 33h1v1h-1zM15 33h1v1h-1zM17 33h1v1h-1zM22 33h1v1h-1zM25 33h2v1h-2zM30 33h4v1h-4zM4 34h1v1h-1zM6 34h3v1h-3zM10 34h1v1h-1zM13 34h1v1h-1zM16 34h1v1h-1zM19 34h1v1h-1zM22 34h1v1h-1zM25 34h2v1h-2zM28 34h1v1h-1zM30 34h4v1h-4zM4 35h1v1h-1zM10 35h1v1h-1zM17 35h7v1h-7zM25 35h1v1h-1zM27 35h3v1h-3zM4 36h7v1h-7zM12 36h2v1h-2zM16 36h1v1h-1zM18 36h1v1h-1zM21 36h1v1h-1zM23 36h3v1h-3zM27 36h2v1h-2zM30 36h1v1h-1zM36 36h1v1h-1z"/></svg>';
+/*QR:END*/
 
 // ─────────── Тема ───────────
 function applyTheme() {
@@ -1815,6 +1882,10 @@ function renderHome(screen) {
     b.addEventListener('click', function () { setLang(code); });
     switcher.appendChild(b);
   });
+  const tools = el('div', 'tools');
+  tools.appendChild(iconButton('share', 'share-home', t('share'), function () { shareLink(null, null); }));
+  tools.appendChild(iconButton('qr', 'qr-btn', t('showQr'), function () { openQr(this); }));
+  top.appendChild(tools);
   top.appendChild(switcher);
   screen.appendChild(top);
 
@@ -1971,6 +2042,7 @@ function renderCategory(screen, cat) {
 function renderItem(screen, cat, item, app) {
   screen.classList.add('screen-item');
   screen.appendChild(backLink(catHash(cat), 'c/' + cat.id, loc(cat.name)));
+  screen.appendChild(iconButton('share', 'share-item', t('share'), function () { shareLink(cat, item); }));
 
   const card = el('article', 'card');
   card.appendChild(illustration(item.illustration, 'ill-hero draw'));
@@ -2029,6 +2101,166 @@ function renderItem(screen, cat, item, app) {
   app.appendChild(bar);
 
   document.title = loc(item.name) + ' · ' + company.name;
+}
+
+// ─────────── «Поделиться» ───────────
+// Кнопка-иконка: подпись для диктора и подсказка — из ui
+function iconButton(icon, className, label, onClick) {
+  const b = el('button', 'icon-btn ' + className);
+  b.type = 'button';
+  b.setAttribute('aria-label', label);
+  b.title = label;
+  b.appendChild(svgNode(ICONS[icon]));
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+// Ссылка всегда на сайт (и при открытии файлом), с меткой источника; из карточки — прямо на услугу
+function shareUrl(cat, item) {
+  return priceData.meta.siteUrl + '?src=share' + (item ? itemHash(cat, item) : '');
+}
+
+// Системное меню → копирование в буфер (+ уведомление) → WhatsApp
+function shareLink(cat, item) {
+  const url = shareUrl(cat, item);
+  const text = fill(t('shareText'), { name: company.name });
+  if (navigator.share) {
+    navigator.share({ title: document.title, text: text, url: url }).catch(function (e) {
+      if (e && e.name === 'AbortError') return; // человек закрыл меню
+      copyLink(url, text);
+    });
+    return;
+  }
+  copyLink(url, text);
+}
+
+function copyLink(url, text) {
+  function legacy() {
+    if (legacyCopy(url)) showToast(t('linkCopied'));
+    else window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener');
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () { showToast(t('linkCopied')); }, legacy);
+      return;
+    }
+  } catch (e) { /* ниже — запасной способ */ }
+  legacy();
+}
+
+// Старый способ копирования (браузеры без navigator.clipboard)
+function legacyCopy(value) {
+  const area = el('textarea');
+  area.value = value;
+  area.setAttribute('readonly', '');
+  area.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+  document.body.appendChild(area);
+  let ok = false;
+  try {
+    area.select();
+    area.setSelectionRange(0, value.length);
+    ok = document.execCommand('copy');
+  } catch (e) { ok = false; }
+  document.body.removeChild(area);
+  return ok;
+}
+
+let toastTimer = null;
+function showToast(text) {
+  let toast = document.querySelector('.toast');
+  if (!toast) {
+    toast = el('div', 'toast');
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toast);
+    toast.offsetWidth; // чтобы появление было плавным
+  }
+  toast.textContent = text;
+  toast.classList.toggle('is-above-bar', !!document.querySelector('.book-bar'));
+  toast.classList.add('is-shown');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toast.classList.remove('is-shown'); }, 2000);
+}
+
+// ─────────── Окно «QR-код» ───────────
+// Открытие добавляет запись в историю (адрес тот же) — системная «Назад» закрывает окно.
+let qrModal = null;
+let qrOpener = null;
+
+function openQr(opener) {
+  if (qrModal) return;
+  qrOpener = opener;
+  const modal = el('div', 'qr-modal');
+  const dialog = el('div', 'qr-dialog');
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('aria-labelledby', 'qr-title');
+  dialog.setAttribute('aria-describedby', 'qr-hint');
+  const close = iconButton('close', 'qr-close', t('close'), function () { closeQr(); });
+  const box = el('div', 'qr-box');
+  box.appendChild(svgNode(QR_SVG));
+  const name = el('p', 'qr-name', company.name);
+  name.id = 'qr-title';
+  const hint = el('p', 'qr-hint', t('qrHint'));
+  hint.id = 'qr-hint';
+  dialog.appendChild(close);
+  dialog.appendChild(box);
+  dialog.appendChild(name);
+  dialog.appendChild(hint);
+  modal.appendChild(dialog);
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) closeQr(); // нажатие на фон
+  });
+  modal.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      e.preventDefault();
+      closeQr();
+    } else if (e.key === 'Tab') {
+      // Фокус не выходит из окна
+      const items = dialog.querySelectorAll('button, [href]');
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey ? document.activeElement === first : document.activeElement === last) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+    }
+  });
+  document.body.appendChild(modal);
+  qrModal = modal;
+  document.getElementById('app').setAttribute('aria-hidden', 'true');
+  document.documentElement.style.overflow = 'hidden';
+  try { history.pushState({ idx: currentIdx, qr: true }, ''); } catch (e) { /* без записи «Назад» не закроет окно */ }
+  close.focus();
+}
+
+// fromHistory — окно закрыла системная «Назад» (запись истории уже снята)
+function closeQr(fromHistory) {
+  if (!qrModal) return;
+  if (!fromHistory && history.state && history.state.qr) {
+    history.back(); // окно закроется в обработчике popstate
+    return;
+  }
+  qrModal.parentNode.removeChild(qrModal);
+  qrModal = null;
+  document.getElementById('app').removeAttribute('aria-hidden');
+  document.documentElement.style.overflow = '';
+  // Экран могли перерисовать (смена дня) — тогда фокус на новую кнопку
+  const target = qrOpener && document.contains(qrOpener) ? qrOpener : document.querySelector('.qr-btn');
+  qrOpener = null;
+  if (target) target.focus({ preventScroll: true });
+}
+
+function onPopState() {
+  if (qrModal && !(history.state && history.state.qr)) closeQr(true);
+}
+
+// Фокус ушёл за пределы открытого окна (например, кликом) — вернуть в окно
+function keepFocusInQr(e) {
+  if (qrModal && !qrModal.contains(e.target)) {
+    const close = qrModal.querySelector('.qr-close');
+    if (close) close.focus();
+  }
 }
 
 // ─────────── Маршрутизация ───────────
@@ -2185,6 +2417,10 @@ function init() {
     scrollPositions[currentIdx] = window.pageYOffset;
   }, { passive: true });
   window.addEventListener('hashchange', onRoute);
+  window.addEventListener('popstate', onPopState);
+  document.addEventListener('focusin', keepFocusInQr);
+  // Страницу перезагрузили с открытым окном QR — убрать лишнюю запись истории
+  if (history.state && history.state.qr) history.back();
   promoDay = salonToday(new Date());
   warnPromoWithVariants();
   onRoute();

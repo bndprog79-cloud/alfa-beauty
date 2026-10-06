@@ -77,7 +77,13 @@ const priceData = {
       waTemplatePromo: "Здравствуйте! Хочу записаться на услугу по акции: {name} ({price}).",
       variantsTitle: "Стоимость",
       chooseVariant: "Выберите вариант",
-      waTemplateVariant: "Здравствуйте! Хочу записаться на услугу: {name}, {variant} ({price})."
+      waTemplateVariant: "Здравствуйте! Хочу записаться на услугу: {name}, {variant} ({price}).",
+      share: "Поделиться",
+      shareText: "Прайс-лист салона {name}",
+      linkCopied: "Ссылка скопирована",
+      showQr: "QR-код",
+      qrHint: "Наведите камеру телефона",
+      close: "Закрыть"
     },
     kk: {
       langLabel: "KZ",
@@ -117,7 +123,13 @@ const priceData = {
       waTemplatePromo: "Сәлеметсіз бе! Акция бойынша мына қызметке жазылғым келеді: {name} ({price}).",
       variantsTitle: "Құны",
       chooseVariant: "Нұсқаны таңдаңыз",
-      waTemplateVariant: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name}, {variant} ({price})."
+      waTemplateVariant: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name}, {variant} ({price}).",
+      share: "Бөлісу",
+      shareText: "{name} салонының баға тізімі",
+      linkCopied: "Сілтеме көшірілді",
+      showQr: "QR-код",
+      qrHint: "Телефон камерасын бағыттаңыз",
+      close: "Жабу"
     }
   },
 
