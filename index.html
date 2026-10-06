@@ -360,6 +360,9 @@
     border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
   }
   .list li + li { border-top: 1px solid var(--line); }
+  /* Раздел внутри категории: заголовок над своим списком */
+  .group-title { font: 600 20px/1.25 var(--font-head); font-variant-numeric: lining-nums; margin: 0 0 10px; }
+  .list + .group-title { margin-top: -8px; }
   .row {
     display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 10px 12px 12px;
     text-decoration: none; transition: background-color .15s var(--ease);
@@ -403,6 +406,33 @@
     content: ""; position: absolute; left: 6px; top: 13px; width: 8px; height: 4px;
     border-left: 1.6px solid var(--accent-strong); border-bottom: 1.6px solid var(--accent-strong); transform: rotate(-45deg);
   }
+  /* Варианты цены: родные радиокнопки (клавиатура и подписи работают сами), вид — через переменные темы */
+  .variants { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .variants legend {
+    float: left; width: 100%; padding: 0; margin: 22px 0 2px;
+    font: 600 20px/1.25 var(--font-head); font-variant-numeric: lining-nums;
+  }
+  .variants .hint { clear: both; color: var(--text-2); font-size: 13px; margin-bottom: 10px; }
+  .opts { border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+  .opt {
+    display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 14px; cursor: pointer;
+    transition: background-color .15s var(--ease);
+  }
+  .opt + .opt { border-top: 1px solid var(--line); }
+  .opt.is-checked { background: var(--surface-2); }
+  .opt input {
+    -webkit-appearance: none; appearance: none; flex: none; width: 22px; height: 22px; margin: 0;
+    border: 1.6px solid var(--text-2); border-radius: 50%; background: var(--surface);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .opt input::before {
+    content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--accent-strong);
+    transform: scale(0); transition: transform .15s var(--ease);
+  }
+  .opt input:checked { border-color: var(--accent-strong); }
+  .opt input:checked::before { transform: scale(1); }
+  .opt .vname { flex: 1; min-width: 0; }
+  .opt .vprice { font-weight: 600; white-space: nowrap; }
   .screen-item { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 
   /* Кнопка записи — закреплена внизу окна, вне анимируемого экрана */
@@ -555,7 +585,10 @@ const priceData = {
       promoUntil: "до {date}",
       promoSave: "Выгода {sum}",
       oldPrice: "Старая цена",
-      waTemplatePromo: "Здравствуйте! Хочу записаться на услугу по акции: {name} ({price})."
+      waTemplatePromo: "Здравствуйте! Хочу записаться на услугу по акции: {name} ({price}).",
+      variantsTitle: "Стоимость",
+      chooseVariant: "Выберите вариант",
+      waTemplateVariant: "Здравствуйте! Хочу записаться на услугу: {name}, {variant} ({price})."
     },
     kk: {
       langLabel: "KZ",
@@ -592,7 +625,10 @@ const priceData = {
       promoUntil: "{date} дейін",
       promoSave: "Үнемдеу {sum}",
       oldPrice: "Бұрынғы баға",
-      waTemplatePromo: "Сәлеметсіз бе! Акция бойынша мына қызметке жазылғым келеді: {name} ({price})."
+      waTemplatePromo: "Сәлеметсіз бе! Акция бойынша мына қызметке жазылғым келеді: {name} ({price}).",
+      variantsTitle: "Құны",
+      chooseVariant: "Нұсқаны таңдаңыз",
+      waTemplateVariant: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name}, {variant} ({price})."
     }
   },
 
@@ -623,6 +659,13 @@ const priceData = {
           illustration: "hair-women",
           name: { ru: "Женская стрижка", kk: "Әйелдер шаш қиюы" },
           price: { amount: 4000 },
+          // Варианты цены (необязательно): в списке — «от <минимальная>», в карточке — выбор варианта.
+          // С variants поле promo не действует.
+          variants: [
+            { id: "short", name: { ru: "Короткие", kk: "Қысқа" }, amount: 4000 },
+            { id: "medium", name: { ru: "Средние", kk: "Орташа" }, amount: 5000 },
+            { id: "long", name: { ru: "Длинные", kk: "Ұзын" }, amount: 6000 }
+          ],
           duration: 60,
           hit: true,
           desc: {
@@ -742,7 +785,12 @@ const priceData = {
           id: "solid",
           illustration: "color-solid",
           name: { ru: "Окрашивание в один тон", kk: "Бір түске бояу" },
-          price: { amount: 10000, from: true },
+          price: { amount: 10000 },
+          variants: [
+            { id: "short", name: { ru: "Короткие", kk: "Қысқа" }, amount: 10000 },
+            { id: "medium", name: { ru: "Средние", kk: "Орташа" }, amount: 14000 },
+            { id: "long", name: { ru: "Длинные", kk: "Ұзын" }, amount: 18000 }
+          ],
           duration: 120,
           desc: {
             ru: "Равномерный цвет по всей длине: освежить свой оттенок, закрасить седину или сменить цвет.",
@@ -781,6 +829,8 @@ const priceData = {
           id: "manicure-gel",
           illustration: "nails-gel",
           name: { ru: "Маникюр с покрытием гель-лаком", kk: "Гель-лак жабынымен маникюр" },
+          // Раздел внутри категории (необязательно): подряд идущие услуги с одинаковым group — под общим заголовком.
+          group: { ru: "Маникюр", kk: "Маникюр" },
           price: { amount: 4000 },
           promo: { amount: 3200, until: "2026-10-31" },
           duration: 90,
@@ -798,6 +848,7 @@ const priceData = {
           id: "manicure-classic",
           illustration: "nails-classic",
           name: { ru: "Классический (обрезной) маникюр", kk: "Классикалық (кесілетін) маникюр" },
+          group: { ru: "Маникюр", kk: "Маникюр" },
           price: { amount: 2500 },
           duration: 45,
           desc: {
@@ -813,6 +864,7 @@ const priceData = {
           id: "hands-coat",
           illustration: "nails-coat",
           name: { ru: "Покрытие гель-лаком / руки", kk: "Гель-лак жабыны / қол" },
+          group: { ru: "Покрытие и дизайн", kk: "Жабын және дизайн" },
           price: { amount: 1500 },
           duration: 40,
           desc: {
@@ -828,6 +880,7 @@ const priceData = {
           id: "nail-design",
           illustration: "nails-design",
           name: { ru: "Дизайн ногтей", kk: "Тырнақ дизайны" },
+          group: { ru: "Покрытие и дизайн", kk: "Жабын және дизайн" },
           price: { amount: 500, from: true, per: { ru: "ноготь", kk: "тырнақ" } },
           duration: 30,
           desc: {
@@ -843,6 +896,7 @@ const priceData = {
           id: "nail-extension",
           illustration: "nails-extension",
           name: { ru: "Наращивание ногтей", kk: "Тырнақ ұзарту" },
+          group: { ru: "Наращивание", kk: "Ұзарту" },
           price: { amount: 10000, from: true },
           duration: 150,
           desc: {
@@ -922,6 +976,7 @@ const priceData = {
           id: "lash-classic",
           illustration: "lash-classic",
           name: { ru: "Классическое наращивание ресниц", kk: "Кірпікті классикалық ұзарту" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 7000 },
           duration: 120,
           desc: {
@@ -937,6 +992,7 @@ const priceData = {
           id: "lash-2d",
           illustration: "lash-2d",
           name: { ru: "2D наращивание", kk: "2D кірпік ұзарту" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 8500 },
           duration: 150,
           desc: {
@@ -952,6 +1008,7 @@ const priceData = {
           id: "lash-3d",
           illustration: "lash-3d",
           name: { ru: "3D наращивание", kk: "3D кірпік ұзарту" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 9500 },
           promo: { amount: 7900, until: "2026-10-31" },
           duration: 150,
@@ -969,6 +1026,7 @@ const priceData = {
           id: "lash-mega",
           illustration: "lash-mega",
           name: { ru: "Мегаобъём (4D, 5D)", kk: "Мегакөлем (4D, 5D)" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 10500 },
           duration: 180,
           desc: {
@@ -984,6 +1042,7 @@ const priceData = {
           id: "lash-hollywood",
           illustration: "lash-hollywood",
           name: { ru: "Наращивание «Голливуд» (6D, 8D)", kk: "«Голливуд» кірпік ұзарту (6D, 8D)" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 11000 },
           duration: 180,
           desc: {
@@ -999,6 +1058,7 @@ const priceData = {
           id: "lash-lami",
           illustration: "lash-lami",
           name: { ru: "Ламинирование ресниц", kk: "Кірпікті ламинациялау" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 7000 },
           duration: 60,
           desc: {
@@ -1014,6 +1074,7 @@ const priceData = {
           id: "brow-shape",
           illustration: "brow-shape",
           name: { ru: "Коррекция бровей", kk: "Қасты түзету" },
+          group: { ru: "Брови", kk: "Қас" },
           price: { amount: 2000 },
           duration: 30,
           desc: {
@@ -1029,6 +1090,7 @@ const priceData = {
           id: "brow-tint",
           illustration: "brow-tint",
           name: { ru: "Окрашивание бровей", kk: "Қасты бояу" },
+          group: { ru: "Брови", kk: "Қас" },
           price: { amount: 2500 },
           duration: 30,
           desc: {
@@ -1044,6 +1106,7 @@ const priceData = {
           id: "brow-lami",
           illustration: "brow-lami",
           name: { ru: "Ламинирование бровей", kk: "Қасты ламинациялау" },
+          group: { ru: "Брови", kk: "Қас" },
           price: { amount: 6000 },
           duration: 60,
           desc: {
@@ -1423,16 +1486,34 @@ function salonToday(date) {
   return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
 }
 
-// Действующая акция услуги или null
+// Варианты цены услуги (непустой массив, у каждого числовая amount) или null
+function itemVariants(item) {
+  const v = item.variants;
+  if (!Array.isArray(v) || !v.length) return null;
+  for (let i = 0; i < v.length; i++) {
+    if (!v[i] || typeof v[i].amount !== 'number' || !(v[i].amount >= 0)) return null;
+  }
+  return v;
+}
+
+function minVariantAmount(variants) {
+  return Math.min.apply(null, variants.map(function (v) { return v.amount; }));
+}
+
+// Действующая акция услуги или null (с вариантами цены акция не действует)
 function activePromo(item) {
+  if (itemVariants(item)) return null;
   const p = item.promo;
   if (!p || typeof p.amount !== 'number' || !(p.amount >= 0) || !(p.amount < item.price.amount)) return null;
   if (!ISO_DATE.test(String(p.until)) || promoDay > p.until) return null;
   return p;
 }
 
-// Цена с учётом акции: from и per — от обычной цены
+// Цена с учётом акции: from и per — от обычной цены.
+// С вариантами — «от <минимальный вариант>».
 function effectivePrice(item) {
+  const variants = itemVariants(item);
+  if (variants) return { amount: minVariantAmount(variants), from: true, per: item.price.per };
   const p = activePromo(item);
   return p ? { amount: p.amount, from: item.price.from, per: item.price.per } : item.price;
 }
@@ -1614,9 +1695,68 @@ function serviceRow(cat, item, withCategory) {
   }
   row.appendChild(info);
   if (promo) row.appendChild(promoPrice(item, 'price num is-promo'));
-  else row.appendChild(el('div', 'price num', formatPrice(item.price)));
+  else row.appendChild(el('div', 'price num', formatPrice(effectivePrice(item))));
   row.appendChild(svgNode(ICONS.chev));
   return row;
+}
+
+// ─────────── Варианты цены ───────────
+// Выбранный вариант (номер в массиве) по ключу «категория/услуга» — только в памяти страницы:
+// сохраняется при смене языка и «Назад», после перезагрузки ничего не выбрано
+const chosenVariants = {};
+
+// Цена варианта: «6 000 ₸» (+ « / ноготь», если у услуги есть per)
+function variantPrice(item, v) {
+  let s = formatAmount(v.amount);
+  if (item.price.per) s += t('perPrefix') + loc(item.price.per);
+  return s;
+}
+
+// Ссылка записи: вариант выбран → шаблон с вариантом; акция → шаблон акции; иначе обычный
+function bookLink(item, promo, variant) {
+  if (variant) {
+    return waLink(fill(t('waTemplateVariant'), {
+      name: loc(item.name),
+      variant: loc(variant.name),
+      price: variantPrice(item, variant)
+    }));
+  }
+  return waLink(fill(t(promo ? 'waTemplatePromo' : 'waTemplate'), {
+    name: loc(item.name),
+    price: formatPrice(effectivePrice(item))
+  }));
+}
+
+// Таблица вариантов с выбором (радиокнопки, по умолчанию ничего не выбрано)
+function variantsBlock(cat, item, variants, chosen, onChoose) {
+  const box = el('fieldset', 'variants');
+  box.appendChild(el('legend', null, t('variantsTitle')));
+  const hint = el('p', 'hint', t('chooseVariant'));
+  hint.id = 'vh-' + cat.id + '-' + item.id;
+  box.setAttribute('aria-describedby', hint.id);
+  box.appendChild(hint);
+  const opts = el('div', 'opts');
+  const labels = [];
+  variants.forEach(function (v) {
+    const label = el('label', 'opt');
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'variant-' + cat.id + '-' + item.id;
+    input.checked = v === chosen;
+    if (input.checked) label.classList.add('is-checked');
+    input.addEventListener('change', function () {
+      if (!input.checked) return;
+      labels.forEach(function (l) { l.classList.toggle('is-checked', l === label); });
+      onChoose(v);
+    });
+    label.appendChild(input);
+    label.appendChild(el('span', 'vname', loc(v.name)));
+    label.appendChild(el('span', 'vprice num', variantPrice(item, v)));
+    labels.push(label);
+    opts.appendChild(label);
+  });
+  box.appendChild(opts);
+  return box;
 }
 
 // Лента акций на главной (null, если действующих акций нет)
@@ -1807,13 +1947,23 @@ function renderCategory(screen, cat) {
   head.appendChild(el('p', 'from num', fill(t('priceFrom'), { price: formatAmount(minAmount(cat)) })));
   screen.appendChild(head);
 
-  const list = el('ul', 'list');
+  // Подряд идущие услуги с одинаковым group — свой список под заголовком раздела;
+  // без group — список без заголовка (категория без разделов — один список, как раньше)
+  let list = null;
+  let group = null;
   cat.items.forEach(function (item, i) {
+    const g = item.group ? loc(item.group) : '';
+    if (!list || g !== group) {
+      if (list) screen.appendChild(list);
+      if (g) screen.appendChild(stagger(el('h2', 'group-title', g), i));
+      list = el('ul', 'list');
+      group = g;
+    }
     const li = stagger(el('li'), i);
     li.appendChild(serviceRow(cat, item, false));
     list.appendChild(li);
   });
-  screen.appendChild(list);
+  if (list) screen.appendChild(list);
 
   document.title = loc(cat.name) + ' · ' + company.name;
 }
@@ -1836,14 +1986,28 @@ function renderItem(screen, cat, item, app) {
     info.appendChild(el('span', 'promo-tag num', t('promo') + ' ' + fill(t('promoUntil'), { date: formatDayMonth(promo.until) })));
     info.appendChild(el('span', 'save num', fill(t('promoSave'), { sum: formatSaving(item, promo) })));
     body.appendChild(info);
-  } else {
-    body.appendChild(el('p', 'price-big num', formatPrice(item.price)));
+  }
+  const variants = itemVariants(item);
+  const key = cat.id + '/' + item.id;
+  const chosen = variants ? variants[chosenVariants[key]] || null : null;
+  let priceBig = null;
+  if (!promo) {
+    priceBig = el('p', 'price-big num', chosen ? variantPrice(item, chosen) : formatPrice(effectivePrice(item)));
+    body.appendChild(priceBig);
   }
   if (item.duration || item.hit) {
     const meta = el('p', 'meta');
     if (item.duration) meta.appendChild(durationLabel(item.duration));
     if (item.hit) meta.appendChild(hitBadge());
     body.appendChild(meta);
+  }
+  if (variants) {
+    body.appendChild(variantsBlock(cat, item, variants, chosen, function (v) {
+      chosenVariants[key] = variants.indexOf(v);
+      // Без перерисовки экрана: только крупная цена и ссылка записи
+      priceBig.textContent = variantPrice(item, v);
+      book.href = bookLink(item, null, v);
+    }));
   }
   if (item.desc && loc(item.desc)) body.appendChild(el('p', 'desc', loc(item.desc)));
   const includes = item.includes ? loc(item.includes) : null;
@@ -1858,10 +2022,7 @@ function renderItem(screen, cat, item, app) {
 
   // Кнопка записи — вне анимируемого экрана, чтобы transform её не сдвигал
   const bar = el('div', 'book-bar');
-  const book = externalLink('btn-book', waLink(fill(t(promo ? 'waTemplatePromo' : 'waTemplate'), {
-    name: loc(item.name),
-    price: formatPrice(effectivePrice(item))
-  })));
+  const book = externalLink('btn-book', bookLink(item, promo, chosen));
   book.appendChild(svgNode(ICONS.whatsapp));
   book.appendChild(el('span', null, t('book')));
   bar.appendChild(book);
@@ -2003,6 +2164,18 @@ function setupPwa() {
   } catch (e) { /* без PWA прайс работает как обычная страница */ }
 }
 
+// promo и variants в одной услуге не поддерживаются: действует только variants
+// (сообщение для того, кто правит данные; на экране ошибки нет)
+function warnPromoWithVariants() {
+  priceData.categories.forEach(function (cat) {
+    cat.items.forEach(function (item) {
+      if (item.promo && itemVariants(item) && window.console) {
+        console.warn('priceData: услуга "' + item.id + '" — указаны и promo, и variants; promo не действует.');
+      }
+    });
+  });
+}
+
 function init() {
   applyTheme();
   setupPwa();
@@ -2013,6 +2186,7 @@ function init() {
   }, { passive: true });
   window.addEventListener('hashchange', onRoute);
   promoDay = salonToday(new Date());
+  warnPromoWithVariants();
   onRoute();
   scheduleStatus();
   // Телефон мог «спать» — при возврате на вкладку сразу обновить статус и акции

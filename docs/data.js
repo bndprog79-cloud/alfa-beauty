@@ -74,7 +74,10 @@ const priceData = {
       promoUntil: "до {date}",
       promoSave: "Выгода {sum}",
       oldPrice: "Старая цена",
-      waTemplatePromo: "Здравствуйте! Хочу записаться на услугу по акции: {name} ({price})."
+      waTemplatePromo: "Здравствуйте! Хочу записаться на услугу по акции: {name} ({price}).",
+      variantsTitle: "Стоимость",
+      chooseVariant: "Выберите вариант",
+      waTemplateVariant: "Здравствуйте! Хочу записаться на услугу: {name}, {variant} ({price})."
     },
     kk: {
       langLabel: "KZ",
@@ -111,7 +114,10 @@ const priceData = {
       promoUntil: "{date} дейін",
       promoSave: "Үнемдеу {sum}",
       oldPrice: "Бұрынғы баға",
-      waTemplatePromo: "Сәлеметсіз бе! Акция бойынша мына қызметке жазылғым келеді: {name} ({price})."
+      waTemplatePromo: "Сәлеметсіз бе! Акция бойынша мына қызметке жазылғым келеді: {name} ({price}).",
+      variantsTitle: "Құны",
+      chooseVariant: "Нұсқаны таңдаңыз",
+      waTemplateVariant: "Сәлеметсіз бе! Мына қызметке жазылғым келеді: {name}, {variant} ({price})."
     }
   },
 
@@ -142,6 +148,13 @@ const priceData = {
           illustration: "hair-women",
           name: { ru: "Женская стрижка", kk: "Әйелдер шаш қиюы" },
           price: { amount: 4000 },
+          // Варианты цены (необязательно): в списке — «от <минимальная>», в карточке — выбор варианта.
+          // С variants поле promo не действует.
+          variants: [
+            { id: "short", name: { ru: "Короткие", kk: "Қысқа" }, amount: 4000 },
+            { id: "medium", name: { ru: "Средние", kk: "Орташа" }, amount: 5000 },
+            { id: "long", name: { ru: "Длинные", kk: "Ұзын" }, amount: 6000 }
+          ],
           duration: 60,
           hit: true,
           desc: {
@@ -261,7 +274,12 @@ const priceData = {
           id: "solid",
           illustration: "color-solid",
           name: { ru: "Окрашивание в один тон", kk: "Бір түске бояу" },
-          price: { amount: 10000, from: true },
+          price: { amount: 10000 },
+          variants: [
+            { id: "short", name: { ru: "Короткие", kk: "Қысқа" }, amount: 10000 },
+            { id: "medium", name: { ru: "Средние", kk: "Орташа" }, amount: 14000 },
+            { id: "long", name: { ru: "Длинные", kk: "Ұзын" }, amount: 18000 }
+          ],
           duration: 120,
           desc: {
             ru: "Равномерный цвет по всей длине: освежить свой оттенок, закрасить седину или сменить цвет.",
@@ -300,6 +318,8 @@ const priceData = {
           id: "manicure-gel",
           illustration: "nails-gel",
           name: { ru: "Маникюр с покрытием гель-лаком", kk: "Гель-лак жабынымен маникюр" },
+          // Раздел внутри категории (необязательно): подряд идущие услуги с одинаковым group — под общим заголовком.
+          group: { ru: "Маникюр", kk: "Маникюр" },
           price: { amount: 4000 },
           promo: { amount: 3200, until: "2026-10-31" },
           duration: 90,
@@ -317,6 +337,7 @@ const priceData = {
           id: "manicure-classic",
           illustration: "nails-classic",
           name: { ru: "Классический (обрезной) маникюр", kk: "Классикалық (кесілетін) маникюр" },
+          group: { ru: "Маникюр", kk: "Маникюр" },
           price: { amount: 2500 },
           duration: 45,
           desc: {
@@ -332,6 +353,7 @@ const priceData = {
           id: "hands-coat",
           illustration: "nails-coat",
           name: { ru: "Покрытие гель-лаком / руки", kk: "Гель-лак жабыны / қол" },
+          group: { ru: "Покрытие и дизайн", kk: "Жабын және дизайн" },
           price: { amount: 1500 },
           duration: 40,
           desc: {
@@ -347,6 +369,7 @@ const priceData = {
           id: "nail-design",
           illustration: "nails-design",
           name: { ru: "Дизайн ногтей", kk: "Тырнақ дизайны" },
+          group: { ru: "Покрытие и дизайн", kk: "Жабын және дизайн" },
           price: { amount: 500, from: true, per: { ru: "ноготь", kk: "тырнақ" } },
           duration: 30,
           desc: {
@@ -362,6 +385,7 @@ const priceData = {
           id: "nail-extension",
           illustration: "nails-extension",
           name: { ru: "Наращивание ногтей", kk: "Тырнақ ұзарту" },
+          group: { ru: "Наращивание", kk: "Ұзарту" },
           price: { amount: 10000, from: true },
           duration: 150,
           desc: {
@@ -441,6 +465,7 @@ const priceData = {
           id: "lash-classic",
           illustration: "lash-classic",
           name: { ru: "Классическое наращивание ресниц", kk: "Кірпікті классикалық ұзарту" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 7000 },
           duration: 120,
           desc: {
@@ -456,6 +481,7 @@ const priceData = {
           id: "lash-2d",
           illustration: "lash-2d",
           name: { ru: "2D наращивание", kk: "2D кірпік ұзарту" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 8500 },
           duration: 150,
           desc: {
@@ -471,6 +497,7 @@ const priceData = {
           id: "lash-3d",
           illustration: "lash-3d",
           name: { ru: "3D наращивание", kk: "3D кірпік ұзарту" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 9500 },
           promo: { amount: 7900, until: "2026-10-31" },
           duration: 150,
@@ -488,6 +515,7 @@ const priceData = {
           id: "lash-mega",
           illustration: "lash-mega",
           name: { ru: "Мегаобъём (4D, 5D)", kk: "Мегакөлем (4D, 5D)" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 10500 },
           duration: 180,
           desc: {
@@ -503,6 +531,7 @@ const priceData = {
           id: "lash-hollywood",
           illustration: "lash-hollywood",
           name: { ru: "Наращивание «Голливуд» (6D, 8D)", kk: "«Голливуд» кірпік ұзарту (6D, 8D)" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 11000 },
           duration: 180,
           desc: {
@@ -518,6 +547,7 @@ const priceData = {
           id: "lash-lami",
           illustration: "lash-lami",
           name: { ru: "Ламинирование ресниц", kk: "Кірпікті ламинациялау" },
+          group: { ru: "Ресницы", kk: "Кірпік" },
           price: { amount: 7000 },
           duration: 60,
           desc: {
@@ -533,6 +563,7 @@ const priceData = {
           id: "brow-shape",
           illustration: "brow-shape",
           name: { ru: "Коррекция бровей", kk: "Қасты түзету" },
+          group: { ru: "Брови", kk: "Қас" },
           price: { amount: 2000 },
           duration: 30,
           desc: {
@@ -548,6 +579,7 @@ const priceData = {
           id: "brow-tint",
           illustration: "brow-tint",
           name: { ru: "Окрашивание бровей", kk: "Қасты бояу" },
+          group: { ru: "Брови", kk: "Қас" },
           price: { amount: 2500 },
           duration: 30,
           desc: {
@@ -563,6 +595,7 @@ const priceData = {
           id: "brow-lami",
           illustration: "brow-lami",
           name: { ru: "Ламинирование бровей", kk: "Қасты ламинациялау" },
+          group: { ru: "Брови", kk: "Қас" },
           price: { amount: 6000 },
           duration: 60,
           desc: {
