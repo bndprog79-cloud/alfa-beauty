@@ -30,12 +30,27 @@ const priceData = {
     instagram: "https://instagram.com/alfa.beauty.lab",
     mapLink: "https://2gis.kz/almaty/search/%D0%90%D0%B1%D0%B0%D1%8F%20150",
     timezone: "Asia/Almaty",       // часовой пояс салона для статуса «Открыто/Закрыто» (необязательно)
+    // Режим работы. week: часы по дням недели, null — выходной, break — перерыв [начало, конец] (необязательно).
+    // exceptions: особые даты — { date: "ГГГГ-ММ-ДД", open, close } или { date, closed: true }.
+    // Старый формат { days: [1…7], open, close } тоже работает.
     hours: {
-      // 1 = понедельник … 7 = воскресенье
-      days: [1, 2, 3, 4, 5, 6, 7],
-      open: "10:00",
-      close: "20:00"
+      week: {
+        mon: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        tue: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        wed: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        thu: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        fri: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        sat: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        sun: { open: "11:00", close: "17:00" }
+      },
+      exceptions: [
+        { date: "2026-12-31", open: "10:00", close: "16:00" },
+        { date: "2027-01-01", closed: true }
+      ]
     }
+    // Онлайн-запись (необязательно): кнопка «Записаться онлайн» в карточке услуги, WhatsApp — второй кнопкой.
+    // booking: { url: "https://…", label: { ru: "…", kk: "…" } }   (label необязателен)
+    // У категории можно задать свою ссылку: bookingUrl: "https://…" (приоритетнее общей).
   },
 
   ui: {
@@ -83,7 +98,19 @@ const priceData = {
       linkCopied: "Ссылка скопирована",
       showQr: "QR-код",
       qrHint: "Наведите камеру телефона",
-      close: "Закрыть"
+      close: "Закрыть",
+      schedule: "Режим работы",
+      dayOff: "Выходной",
+      breakUntil: "Перерыв до {time}",
+      breakFrom: "Открыто · перерыв с {time}",
+      breakTime: "перерыв {from}–{to}",
+      closedOpensTomorrow: "Закрыто · откроется завтра в {time}",
+      closedOpensDay: "Закрыто · откроется {day} в {time}",
+      specialDates: "Особые дни",
+      daysShort: ["пн", "вт", "ср", "чт", "пт", "сб", "вс"],
+      daysOn: ["в понедельник", "во вторник", "в среду", "в четверг", "в пятницу", "в субботу", "в воскресенье"],
+      bookOnline: "Записаться онлайн",
+      writeWhatsapp: "Написать в WhatsApp"
     },
     kk: {
       langLabel: "KZ",
@@ -129,7 +156,19 @@ const priceData = {
       linkCopied: "Сілтеме көшірілді",
       showQr: "QR-код",
       qrHint: "Телефон камерасын бағыттаңыз",
-      close: "Жабу"
+      close: "Жабу",
+      schedule: "Жұмыс уақыты",
+      dayOff: "Демалыс",
+      breakUntil: "{time} дейін үзіліс",
+      breakFrom: "Ашық · үзіліс {time}",
+      breakTime: "үзіліс {from}–{to}",
+      closedOpensTomorrow: "Жабық · ертең {time} ашылады",
+      closedOpensDay: "Жабық · {day} {time} ашылады",
+      specialDates: "Ерекше күндер",
+      daysShort: ["дс", "сс", "ср", "бс", "жм", "сб", "жс"],
+      daysOn: ["дүйсенбі", "сейсенбі", "сәрсенбі", "бейсенбі", "жұма", "сенбі", "жексенбі"],
+      bookOnline: "Онлайн жазылу",
+      writeWhatsapp: "WhatsApp-қа жазу"
     }
   },
 

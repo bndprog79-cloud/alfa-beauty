@@ -266,6 +266,27 @@
   .status { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--text-2); }
   .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
   .status.is-open { color: var(--ok); }
+  /* Статус — кнопка, раскрывает режим работы */
+  .hours { margin-top: 2px; }
+  .hours .status {
+    display: inline-flex; min-height: 44px; margin: 0; padding: 0 12px; border: 0; border-radius: 22px;
+    background: none; font-family: inherit; line-height: 1.3; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .hours .status .chev-down { width: 16px; height: 16px; margin-left: -2px; transition: transform .2s var(--ease); }
+  .hours .status[aria-expanded="true"] .chev-down { transform: rotate(180deg); }
+  .hours-panel {
+    max-width: 320px; margin: 4px auto 0; padding: 14px 16px; text-align: left;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); animation: fadeIn .2s var(--ease);
+  }
+  .hours-panel h2, .hours-panel h3 { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+  .hours-panel h3 { margin-top: 12px; }
+  .hours-panel ul { list-style: none; padding: 0; }
+  .hours-panel li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 8px; margin: 0 -8px; border-radius: 8px; font-size: 15px; }
+  .hours-panel li.is-today { background: var(--surface-2); font-weight: 600; }
+  .hours-panel .dtime { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+  .hours-panel .off { color: var(--text-2); }
+  .hours-panel .brk { font-size: 13px; font-weight: 400; color: var(--text-2); }
+  .hours-panel li.is-today .brk, .hours-panel li.is-today .off { color: var(--text); } /* --text-2 на --surface-2 ниже AA */
 
   /* Быстрые действия */
   .actions { display: flex; justify-content: center; gap: 20px; padding: 4px 0 24px; }
@@ -498,6 +519,17 @@
     transition: transform .18s var(--ease);
   }
   .btn-book:active { transform: scale(.98); }
+  /* Есть онлайн-запись: вторая кнопка — WhatsApp (контурная) */
+  .btn-wa {
+    pointer-events: auto;
+    display: flex; align-items: center; justify-content: center; gap: 10px; max-width: 448px; min-height: 48px; margin: 8px auto 0;
+    padding: 6px 20px; border-radius: 16px; border: 1px solid var(--accent-strong); background: var(--surface); color: var(--accent-strong);
+    text-decoration: none; font-weight: 600; text-align: center;
+    transition: transform .18s var(--ease);
+  }
+  .btn-wa:active { transform: scale(.98); }
+  .screen-item.has-booking { padding-bottom: calc(152px + env(safe-area-inset-bottom)); }
+  .toast.is-above-bar.has-booking { bottom: calc(152px + env(safe-area-inset-bottom)); }
 
   /* Цифры одинаковой высоты: у шрифта заголовков по умолчанию старинные цифры.
      Стоит после правил с font:, потому что font: сбрасывает font-variant-numeric. */
@@ -530,7 +562,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
-    .cat-card:active, .promo-card:active, .action:active .circle, .btn-book:active, .icon-btn:active { transform: none; }
+    .cat-card:active, .promo-card:active, .action:active .circle, .btn-book:active, .btn-wa:active, .icon-btn:active { transform: none; }
   }
 
   /* Узкие экраны (320px) */
@@ -588,12 +620,27 @@ const priceData = {
     instagram: "https://instagram.com/alfa.beauty.lab",
     mapLink: "https://2gis.kz/almaty/search/%D0%90%D0%B1%D0%B0%D1%8F%20150",
     timezone: "Asia/Almaty",       // часовой пояс салона для статуса «Открыто/Закрыто» (необязательно)
+    // Режим работы. week: часы по дням недели, null — выходной, break — перерыв [начало, конец] (необязательно).
+    // exceptions: особые даты — { date: "ГГГГ-ММ-ДД", open, close } или { date, closed: true }.
+    // Старый формат { days: [1…7], open, close } тоже работает.
     hours: {
-      // 1 = понедельник … 7 = воскресенье
-      days: [1, 2, 3, 4, 5, 6, 7],
-      open: "10:00",
-      close: "20:00"
+      week: {
+        mon: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        tue: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        wed: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        thu: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        fri: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        sat: { open: "10:00", close: "20:00", break: ["14:00", "14:30"] },
+        sun: { open: "11:00", close: "17:00" }
+      },
+      exceptions: [
+        { date: "2026-12-31", open: "10:00", close: "16:00" },
+        { date: "2027-01-01", closed: true }
+      ]
     }
+    // Онлайн-запись (необязательно): кнопка «Записаться онлайн» в карточке услуги, WhatsApp — второй кнопкой.
+    // booking: { url: "https://…", label: { ru: "…", kk: "…" } }   (label необязателен)
+    // У категории можно задать свою ссылку: bookingUrl: "https://…" (приоритетнее общей).
   },
 
   ui: {
@@ -641,7 +688,19 @@ const priceData = {
       linkCopied: "Ссылка скопирована",
       showQr: "QR-код",
       qrHint: "Наведите камеру телефона",
-      close: "Закрыть"
+      close: "Закрыть",
+      schedule: "Режим работы",
+      dayOff: "Выходной",
+      breakUntil: "Перерыв до {time}",
+      breakFrom: "Открыто · перерыв с {time}",
+      breakTime: "перерыв {from}–{to}",
+      closedOpensTomorrow: "Закрыто · откроется завтра в {time}",
+      closedOpensDay: "Закрыто · откроется {day} в {time}",
+      specialDates: "Особые дни",
+      daysShort: ["пн", "вт", "ср", "чт", "пт", "сб", "вс"],
+      daysOn: ["в понедельник", "во вторник", "в среду", "в четверг", "в пятницу", "в субботу", "в воскресенье"],
+      bookOnline: "Записаться онлайн",
+      writeWhatsapp: "Написать в WhatsApp"
     },
     kk: {
       langLabel: "KZ",
@@ -687,7 +746,19 @@ const priceData = {
       linkCopied: "Сілтеме көшірілді",
       showQr: "QR-код",
       qrHint: "Телефон камерасын бағыттаңыз",
-      close: "Жабу"
+      close: "Жабу",
+      schedule: "Жұмыс уақыты",
+      dayOff: "Демалыс",
+      breakUntil: "{time} дейін үзіліс",
+      breakFrom: "Ашық · үзіліс {time}",
+      breakTime: "үзіліс {from}–{to}",
+      closedOpensTomorrow: "Жабық · ертең {time} ашылады",
+      closedOpensDay: "Жабық · {day} {time} ашылады",
+      specialDates: "Ерекше күндер",
+      daysShort: ["дс", "сс", "ср", "бс", "жм", "сб", "жс"],
+      daysOn: ["дүйсенбі", "сейсенбі", "сәрсенбі", "бейсенбі", "жұма", "сенбі", "жексенбі"],
+      bookOnline: "Онлайн жазылу",
+      writeWhatsapp: "WhatsApp-қа жазу"
     }
   },
 
@@ -1339,7 +1410,9 @@ const ICONS = {
   search: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.8" cy="10.8" r="6.3"/><path d="M15.4 15.4l4.6 4.6"/></svg>',
   close: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7l10 10M17 7L7 17"/></svg>',
   share: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15V3.5M8 7.5l4-4 4 4"/><path d="M8.5 10.5H6v10h12v-10h-2.5"/></svg>',
-  qr: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM14 20h.01M20 14h.01"/></svg>'
+  qr: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM14 20h.01M20 14h.01"/></svg>',
+  calendar: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4M9 14.8l2 2 4-4"/></svg>',
+  down: '<svg class="ico chev-down" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9.5l6 6 6-6"/></svg>'
 };
 
 // QR-код со ссылкой на сайт (?src=qr) для окна «QR-код»
@@ -1488,30 +1561,192 @@ function toMinutes(hhmm) {
   return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10);
 }
 
-// { open: true|false, text } или null, если часы работы не заданы
-function workStatus(date) {
-  const hours = company.hours;
-  if (!hours || !hours.open || !hours.close) return null;
-  const days = hours.days || [1, 2, 3, 4, 5, 6, 7];
-  const open = toMinutes(hours.open);
-  const close = toMinutes(hours.close);
-  if (!days.length || isNaN(open) || isNaN(close)) return null;
-  const now = salonClock(date);
-  if (days.indexOf(now.day) !== -1 && now.min >= open && now.min < close) {
-    return { open: true, text: fill(t('openUntil'), { time: hours.close }) };
+// ЧЧ:ММ из минут (для «24:00» тоже)
+function formatTime(min) { return pad2(Math.floor(min / 60)) + ':' + pad2(min % 60); }
+
+const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const HHMM = /^\d{1,2}:\d{2}$/;
+const SPECIAL_DAYS_AHEAD = 14; // особые даты в расписании и поиск ближайшего открытия
+
+function timeMinutes(v) { return HHMM.test(String(v)) ? toMinutes(v) : NaN; }
+
+// Часы одного дня в минутах: { open, close, brk: {from, to} | null } или null — выходной (или неверная запись)
+function parseDay(d) {
+  if (!d || d.closed) return null;
+  const open = timeMinutes(d.open);
+  const close = timeMinutes(d.close);
+  if (isNaN(open) || isNaN(close) || close <= open || close > 1440) return null;
+  const day = { open: open, close: close, brk: null };
+  if (Array.isArray(d.break) && d.break.length === 2) {
+    const from = timeMinutes(d.break[0]);
+    const to = timeMinutes(d.break[1]);
+    if (from > open && to > from && to < close) day.brk = { from: from, to: to };
   }
-  return { open: false, text: fill(t('closedOpensAt'), { time: hours.open }) };
+  return day;
+}
+
+// company.hours в общем виде: { week: [пн…вс], exceptions: { "ГГГГ-ММ-ДД": день | null } } или null.
+// Новый формат — week/exceptions; старый — days/open/close (одинаковые часы в дни из days).
+let salonHoursCache;
+
+function salonHours() {
+  if (salonHoursCache !== undefined) return salonHoursCache;
+  salonHoursCache = null;
+  const h = company.hours;
+  if (!h) return null;
+  const week = [];
+  if (h.week) {
+    DAY_KEYS.forEach(function (k) { week.push(parseDay(h.week[k])); });
+  } else if (h.open && h.close) {
+    const days = h.days || [1, 2, 3, 4, 5, 6, 7];
+    for (let d = 1; d <= 7; d++) week.push(days.indexOf(d) !== -1 ? parseDay({ open: h.open, close: h.close }) : null);
+  } else {
+    return null;
+  }
+  const exceptions = {};
+  (Array.isArray(h.exceptions) ? h.exceptions : []).forEach(function (x) {
+    if (!x || !ISO_DATE.test(String(x.date))) return;
+    const day = parseDay(x);
+    if (day || x.closed) exceptions[x.date] = day;
+  });
+  salonHoursCache = { week: week, exceptions: exceptions };
+  return salonHoursCache;
+}
+
+function isoToUTC(iso) {
+  const p = iso.split('-');
+  return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+}
+
+function addDays(iso, n) {
+  const d = isoToUTC(iso);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
+}
+
+// 1 = понедельник … 7 = воскресенье
+function isoWeekday(iso) { return isoToUTC(iso).getUTCDay() || 7; }
+
+// Часы на дату: особая дата, иначе обычный день недели
+function daySchedule(hours, iso) {
+  return Object.prototype.hasOwnProperty.call(hours.exceptions, iso) ? hours.exceptions[iso] : hours.week[isoWeekday(iso) - 1];
+}
+
+// { state: 'open' | 'break' | 'closed', text } или null (часы не заданы или открытия в ближайшие дни нет)
+function workStatus(date) {
+  const hours = salonHours();
+  if (!hours) return null;
+  const today = salonToday(date);
+  const min = salonClock(date).min;
+  const d = daySchedule(hours, today);
+  if (d && min >= d.open && min < d.close) {
+    if (d.brk && min >= d.brk.from && min < d.brk.to) {
+      return { state: 'break', text: fill(t('breakUntil'), { time: formatTime(d.brk.to) }) };
+    }
+    if (d.brk && min < d.brk.from && d.brk.from - min <= 60) {
+      return { state: 'open', text: fill(t('breakFrom'), { time: formatTime(d.brk.from) }) };
+    }
+    return { state: 'open', text: fill(t('openUntil'), { time: formatTime(d.close) }) };
+  }
+  if (d && min < d.open) return { state: 'closed', text: fill(t('closedOpensAt'), { time: formatTime(d.open) }) };
+  for (let i = 1; i <= SPECIAL_DAYS_AHEAD; i++) {
+    const iso = addDays(today, i);
+    const next = daySchedule(hours, iso);
+    if (!next) continue;
+    if (i === 1) return { state: 'closed', text: fill(t('closedOpensTomorrow'), { time: formatTime(next.open) }) };
+    return { state: 'closed', text: fill(t('closedOpensDay'), { day: t('daysOn')[isoWeekday(iso) - 1], time: formatTime(next.open) }) };
+  }
+  return null;
 }
 
 function paintStatus(node, status) {
-  node.textContent = status.text;
-  node.className = 'status ' + (status.open ? 'is-open' : 'is-closed');
+  node.querySelector('.status-text').textContent = status.text;
+  node.className = 'status is-' + status.state;
+}
+
+// «10:00–20:00» (+ строка перерыва) или «Выходной»
+function dayHours(day) {
+  const box = el('span', 'dtime');
+  if (!day) {
+    box.appendChild(el('span', 'off', t('dayOff')));
+    return box;
+  }
+  box.appendChild(el('span', 'num', formatTime(day.open) + '–' + formatTime(day.close)));
+  if (day.brk) box.appendChild(el('span', 'brk num', fill(t('breakTime'), { from: formatTime(day.brk.from), to: formatTime(day.brk.to) })));
+  return box;
+}
+
+// Содержимое панели «Режим работы»: неделя (сегодня выделено) и особые даты в ближайшие 14 дней
+function fillHoursPanel(panel, date) {
+  const hours = salonHours();
+  const today = salonToday(date);
+  const todayDay = isoWeekday(today);
+  panel.textContent = '';
+  panel.appendChild(el('h2', null, t('schedule')));
+  const week = el('ul', 'week');
+  hours.week.forEach(function (day, i) {
+    const li = el('li');
+    if (i + 1 === todayDay) {
+      li.className = 'is-today';
+      li.setAttribute('aria-current', 'date');
+    }
+    li.appendChild(el('span', 'dname', t('daysShort')[i]));
+    li.appendChild(dayHours(day));
+    week.appendChild(li);
+  });
+  panel.appendChild(week);
+  const last = addDays(today, SPECIAL_DAYS_AHEAD);
+  const dates = Object.keys(hours.exceptions).filter(function (iso) { return iso >= today && iso <= last; }).sort();
+  if (!dates.length) return;
+  panel.appendChild(el('h3', null, t('specialDates')));
+  const list = el('ul', 'special');
+  dates.forEach(function (iso) {
+    const li = el('li');
+    if (iso === today) li.className = 'is-today';
+    li.appendChild(el('span', 'dname num', formatDayMonth(iso) + ', ' + t('daysShort')[isoWeekday(iso) - 1]));
+    li.appendChild(dayHours(hours.exceptions[iso]));
+    list.appendChild(li);
+  });
+  panel.appendChild(list);
+}
+
+// Раскрыто ли расписание — только в памяти страницы (сохраняется при смене языка и «Назад»)
+let hoursOpen = false;
+
+// Статус-кнопка и панель расписания (null, если статуса нет)
+function hoursBlock() {
+  const now = new Date();
+  const status = workStatus(now);
+  if (!status) return null;
+  const box = el('div', 'hours');
+  const btn = el('button');
+  btn.type = 'button';
+  btn.setAttribute('aria-controls', 'hours-panel');
+  btn.setAttribute('aria-expanded', hoursOpen ? 'true' : 'false');
+  btn.appendChild(el('span', 'status-text'));
+  btn.appendChild(svgNode(ICONS.down));
+  paintStatus(btn, status);
+  const panel = el('div', 'hours-panel');
+  panel.id = 'hours-panel';
+  panel.hidden = !hoursOpen;
+  fillHoursPanel(panel, now);
+  btn.addEventListener('click', function () {
+    hoursOpen = !hoursOpen;
+    btn.setAttribute('aria-expanded', hoursOpen ? 'true' : 'false');
+    panel.hidden = !hoursOpen;
+  });
+  box.appendChild(btn);
+  box.appendChild(panel);
+  return box;
 }
 
 function refreshStatus() {
-  const node = document.querySelector('.status');
-  const status = workStatus(new Date());
-  if (node && status) paintStatus(node, status);
+  const box = document.querySelector('.hours');
+  if (!box) return;
+  const now = new Date();
+  const status = workStatus(now);
+  if (status) paintStatus(box.querySelector('.status'), status);
+  fillHoursPanel(box.querySelector('.hours-panel'), now);
 }
 
 // Обновление раз в минуту, в начале каждой минуты
@@ -1794,6 +2029,18 @@ function bookLink(item, promo, variant) {
   }));
 }
 
+// Ссылка онлайн-записи: своя у категории приоритетнее общей; только http/https, иначе ссылки нет
+function httpUrl(u) { return typeof u === 'string' && /^https?:\/\/\S+$/i.test(u.trim()) ? u.trim() : ''; }
+
+function bookingUrl(cat) {
+  return httpUrl(cat.bookingUrl) || httpUrl(company.booking && company.booking.url);
+}
+
+function bookingLabel() {
+  const label = company.booking && company.booking.label;
+  return (label && loc(label)) || t('bookOnline');
+}
+
 // Таблица вариантов с выбором (радиокнопки, по умолчанию ничего не выбрано)
 function variantsBlock(cat, item, variants, chosen, onChoose) {
   const box = el('fieldset', 'variants');
@@ -1908,12 +2155,8 @@ function renderHome(screen) {
   addr.appendChild(svgNode(ICONS.pin));
   addr.appendChild(el('span', null, loc(company.address)));
   hero.appendChild(addr);
-  const status = workStatus(new Date());
-  if (status) {
-    const st = el('p');
-    paintStatus(st, status);
-    hero.appendChild(st);
-  }
+  const hoursBox = hoursBlock();
+  if (hoursBox) hero.appendChild(hoursBox);
   screen.appendChild(hero);
 
   const actions = el('nav', 'actions');
@@ -2093,10 +2336,24 @@ function renderItem(screen, cat, item, app) {
   screen.appendChild(card);
 
   // Кнопка записи — вне анимируемого экрана, чтобы transform её не сдвигал
-  const bar = el('div', 'book-bar');
-  const book = externalLink('btn-book', bookLink(item, promo, chosen));
-  book.appendChild(svgNode(ICONS.whatsapp));
-  book.appendChild(el('span', null, t('book')));
+  // Есть ссылка онлайн-записи — главная кнопка «Записаться онлайн», WhatsApp — второй кнопкой
+  const online = bookingUrl(cat);
+  const bar = el('div', online ? 'book-bar has-booking' : 'book-bar');
+  let book;
+  if (online) {
+    screen.classList.add('has-booking');
+    const main = externalLink('btn-book', online);
+    main.appendChild(svgNode(ICONS.calendar));
+    main.appendChild(el('span', null, bookingLabel()));
+    bar.appendChild(main);
+    book = externalLink('btn-wa', bookLink(item, promo, chosen));
+    book.appendChild(svgNode(ICONS.whatsapp));
+    book.appendChild(el('span', null, t('writeWhatsapp')));
+  } else {
+    book = externalLink('btn-book', bookLink(item, promo, chosen));
+    book.appendChild(svgNode(ICONS.whatsapp));
+    book.appendChild(el('span', null, t('book')));
+  }
   bar.appendChild(book);
   app.appendChild(bar);
 
@@ -2177,6 +2434,7 @@ function showToast(text) {
   }
   toast.textContent = text;
   toast.classList.toggle('is-above-bar', !!document.querySelector('.book-bar'));
+  toast.classList.toggle('has-booking', !!document.querySelector('.book-bar.has-booking'));
   toast.classList.add('is-shown');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { toast.classList.remove('is-shown'); }, 2000);
